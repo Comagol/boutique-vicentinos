@@ -11,3 +11,12 @@ export interface CustomerInfo {
   phone: string;
 }
 
+export interface OrderItem {
+  productId: string;
+  productName: string;
+  size: string;
+  color: string;
+  quantity: number;
+  price: number; //precio al momento de la compra
+  reservedStock: boolean;
+}
