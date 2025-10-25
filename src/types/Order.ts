@@ -23,7 +23,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  orderNomber: string;
+  orderNumber: string;
   customer: CustomerInfo;
   items: OrderItem[];
   status: OrderStatus;
