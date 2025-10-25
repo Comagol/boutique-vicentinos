@@ -63,18 +63,18 @@ export const ProductModel = {
   //listar todos los productos (con filtros opcionales)
   async getAll(filters?: {isActive?:boolean, category?:ProductCategory}): Promise<Product[]> {
     try {
-      let query: any = (db.collection(COLLECTION_NAME) as any);
+      let query: FirebaseFirestore.Query = db.collection(COLLECTION_NAME);
 
       if (filters?.isActive !== undefined) {
-        query = (query as any).where('isActive', '==', filters.isActive);
+        query = query.where('isActive', '==', filters.isActive);
       }
 
       if (filters?.category) {
-        query = (query as any).where('category', '==', filters.category);
+        query = query.where('category', '==', filters.category);
       }
 
       const snapshot = await query.get();
-      return snapshot.docs.map((doc: any) => firestoreToProduct(doc.data(), doc.id));
+      return snapshot.docs.map((doc) => firestoreToProduct(doc.data(), doc.id));
     } catch (error) {
       throw new Error(`Error getting products: ${error}`);
     }
