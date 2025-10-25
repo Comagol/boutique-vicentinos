@@ -44,5 +44,47 @@ export const OrderModel = {
     } catch (error) {
       throw new Error(`Error getting order by ID: ${error}`);
     }
-  }
+  },
+
+  //Obtener por numero de orden
+  async getByOrderNumber(orderNumber: string): Promise<Order | null> {
+    try {
+      const snapshot = await db.collection(COLLECTION_NAME)
+        .where('orderNumber', '==', orderNumber)
+        .limit(1)
+        .get();
+      
+      if (snapshot.empty) return null;
+      const doc = snapshot.docs[0]!;
+      return firestoreToOrder(doc.data(), doc.id);
+    } catch (error) {
+      throw new Error(`Error getting order by number: ${error}`);
+    }
+  },
+
+  //listar todas las ordenes con filtros opcionales
+  async getAll(filters?: {status?: OrderStatus; customerEmail?: string; customerName?: string}): Promise<Order[]> {
+    try {
+      let query: FirebaseFirestore.Query = db.collection(COLLECTION_NAME);
+
+      if (filters?.status) {
+        query = query.where('status', '==', filters.status);
+      }
+
+      if (filters?.customerEmail) {
+        query = query.where('customer.email', '==', filters.customerEmail);
+      }
+
+      if (filters?.customerName) {
+        query = query.where('customer.name', '==', filters.customerName);
+      }
+
+      const snapshot = await query.orderBy('createdAt', 'desc').get();
+      return snapshot.docs.map((doc) => firestoreToOrder(doc.data(), doc.id));
+    } catch (error) {
+      throw new Error(`Error getting orders: ${error}`);
+    }
+  },
+
+  
 }
