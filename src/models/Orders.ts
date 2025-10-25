@@ -18,6 +18,15 @@ const firestoreToOrder = (data: any, id: string): Order => ({
   expiresAt: data.expiresAt?.toDate(),
 });
 
+//convertir Order a formato Firestore
+const orderToFirestore = (order: Partial<Order>): any => {
+  const { id, ...data } = order;
+  return {
+    ...data,
+    updatedAt: new Date(),
+  };
+};
+
 export const OrderModel = {
   // CREAR orden
   async create(orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order> {
@@ -86,5 +95,66 @@ export const OrderModel = {
     }
   },
 
-  
-}
+  //Actualizar una orden
+  async update(id: string, updates: Partial<Order>): Promise<Order> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).update(orderToFirestore(updates));
+      return (await this.getById(id))!;
+    } catch (error) {
+      throw new Error(`Error updating order: ${error}`);
+    }
+  },
+
+  // ACTUALIZAR estado específico
+  async updateStatus(id: string, status: OrderStatus): Promise<Order> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).update({
+        status,
+        updatedAt: new Date(),
+      });
+      return (await this.getById(id))!;
+    } catch (error) {
+      throw new Error(`Error updating order status: ${error}`);
+    }
+  },
+
+  // CONFIRMAR PAGO
+  async confirmPayment(id: string, paymentId: string): Promise<Order> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).update({
+        status: 'payment-confirmed',
+        paymentId,
+        updatedAt: new Date(),
+      });
+      return (await this.getById(id))!;
+    } catch (error) {
+      throw new Error(`Error confirming payment: ${error}`);
+    }
+  },
+
+  // CANCELAR ORDEN
+  async cancel(id: string, reason: 'manually-cancelled' | 'cancelled-by-time'): Promise<Order> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).update({
+        status: reason,
+        updatedAt: new Date(),
+      });
+      return (await this.getById(id))!;
+    } catch (error) {
+      throw new Error(`Error cancelling order: ${error}`);
+    }
+  },
+
+  // MARCAR COMO ENTREGADO
+  async markAsDelivered(id: string): Promise<Order> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).update({
+        status: 'delivered',
+        updatedAt: new Date(),
+      });
+      return (await this.getById(id))!;
+    } catch (error) {
+      throw new Error(`Error marking order as delivered: ${error}`);
+    }
+  },
+};
