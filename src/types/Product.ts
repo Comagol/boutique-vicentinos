@@ -14,3 +14,10 @@ export type ProductCategory =
 | 'bolsos'
 | 'gorros'
 | 'otros';
+
+export type SizeType = 'adulto' | 'infantil';
+
+export interface ProductSize {
+  size: string;
+  type: SizeType;
+}
