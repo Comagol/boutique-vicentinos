@@ -1,7 +1,8 @@
+// src/models/Products.ts
+
 import { db } from '../config/firebase';
 import { Product, ProductCategory } from '../types/Product';
 
-//nombre de la coleccion en firebase
 const COLLECTION_NAME = 'products';
 
 // Convierto Firestore Timestamp a date
@@ -11,14 +12,14 @@ const firestoreToProduct = (data: any, id: string): Product => ({
   description: data.description,
   category: data.category,
   baseColor: data.baseColor,
-  tags: data.tags || [],
+  tags: data.tags,
   price: data.price,
   discountPrice: data.discountPrice,
-  images: data.images || [],
+  images: data.images,
   sizes: data.sizes,
-  colors: data.colors || [],
-  stock: data.stock || [],
-  isActive: data.isActive ?? true,
+  colors: data.colors,
+  stock: data.stock,
+  isActive: data.isActive,
   createdAt: data.createdAt?.toDate() || new Date(),
   updatedAt: data.updatedAt?.toDate() || new Date(),
 });
@@ -26,10 +27,7 @@ const firestoreToProduct = (data: any, id: string): Product => ({
 // Convierto Product a formato Firestore
 const productToFirestore = (product: Partial<Product>): any => {
   const { id, ...data } = product;
-  return {
-    ...data,
-    updatedAt: new Date(),
-  };
+  return data;
 };
 
 export const ProductModel = {
@@ -49,7 +47,7 @@ export const ProductModel = {
     }
   },
 
-  //Obtener producto por ID
+  // OBTENER por ID
   async getById(id: string): Promise<Product | null> {
     try {
       const doc = await db.collection(COLLECTION_NAME).doc(id).get();
@@ -60,7 +58,7 @@ export const ProductModel = {
     }
   },
 
-  //listar todos los productos (con filtros opcionales)
+  // LISTAR todos (con filtros opcionales)
   async getAll(filters?: {isActive?:boolean, category?:ProductCategory}): Promise<Product[]> {
     try {
       let query: FirebaseFirestore.Query = db.collection(COLLECTION_NAME);
@@ -80,7 +78,7 @@ export const ProductModel = {
     }
   },
 
-  //Actualizar un producto
+  // ACTUALIZAR
   async update(id: string, updates: Partial<Product>): Promise<Product> {
     try {
       await db.collection(COLLECTION_NAME).doc(id).update(productToFirestore(updates));
@@ -90,15 +88,12 @@ export const ProductModel = {
     }
   },
 
-  // ELIMINAR (soft delete cambiando isActive)
+  // ELIMINAR físicamente (sin lógica de negocio)
   async delete(id: string): Promise<void> {
     try {
-      await db.collection(COLLECTION_NAME).doc(id).update({
-        isActive: false,
-        updatedAt: new Date(),
-      });
+      await db.collection(COLLECTION_NAME).doc(id).delete();
     } catch (error) {
       throw new Error(`Error deleting product: ${error}`);
     }
   },
-}
+};
