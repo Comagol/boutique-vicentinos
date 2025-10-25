@@ -20,3 +20,17 @@ export interface OrderItem {
   price: number; //precio al momento de la compra
   reservedStock: boolean;
 }
+
+export interface Order {
+  id: string;
+  orderNomber: string;
+  customer: CustomerInfo;
+  items: OrderItem[];
+  status: OrderStatus;
+  total: number;
+  paymentMethod: string;
+  paymentId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  expiresAt?: Date;
+}
