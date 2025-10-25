@@ -1,4 +1,3 @@
-import { StringifyOptions } from "querystring";
 
 export type ProductCategory =
 | 'camisetas-rugby'
