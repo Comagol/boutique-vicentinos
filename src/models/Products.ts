@@ -59,4 +59,24 @@ export const ProductModel = {
       throw new Error(`Error getting product by ID: ${error}`);
     }
   },
+
+  //listar todos los productos (con filtros opcionales)
+  async getAll(filters?: {isActive?:boolean, category?:ProductCategory}): Promise<Product[]> {
+    try {
+      let query: any = (db.collection(COLLECTION_NAME) as any);
+
+      if (filters?.isActive !== undefined) {
+        query = (query as any).where('isActive', '==', filters.isActive);
+      }
+
+      if (filters?.category) {
+        query = (query as any).where('category', '==', filters.category);
+      }
+
+      const snapshot = await query.get();
+      return snapshot.docs.map((doc: any) => firestoreToProduct(doc.data(), doc.id));
+    } catch (error) {
+      throw new Error(`Error getting products: ${error}`);
+    }
+  }
 }
