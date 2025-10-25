@@ -38,7 +38,7 @@ export interface Product {
   baseColor?: string;
   tags: string[];
   price: number;
-  discount?: number;
+  discountPrice?: number;
   images: string[];
   sizes: ProductSize[];
   colors: string[];
