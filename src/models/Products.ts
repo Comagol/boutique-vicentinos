@@ -78,5 +78,27 @@ export const ProductModel = {
     } catch (error) {
       throw new Error(`Error getting products: ${error}`);
     }
-  }
+  },
+
+  //Actualizar un producto
+  async update(id: string, updates: Partial<Product>): Promise<Product> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).update(productToFirestore(updates));
+      return (await this.getById(id))!;
+    } catch (error) {
+      throw new Error(`Error updating product: ${error}`);
+    }
+  },
+
+  // ELIMINAR (soft delete cambiando isActive)
+  async delete(id: string): Promise<void> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).update({
+        isActive: false,
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      throw new Error(`Error deleting product: ${error}`);
+    }
+  },
 }
