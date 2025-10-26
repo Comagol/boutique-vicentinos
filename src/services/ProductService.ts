@@ -42,7 +42,7 @@ export const ProductService = {
     }
 
     // Generar tags automáticamente desde la categoría (esto es un ejemplo, puede ser más complejo)
-    const tags = generateTagsFromCategory(newProduct.category);
+    const tags = this.generateTagsFromCategory(newProduct.category as ProductCategory);
     newProduct.tags = tags;
 
     // Crear el producto
@@ -107,7 +107,7 @@ export const ProductService = {
 
     // Si cambia la categoría, regenerar tags
     if (updates.category) {
-      updates.tags = this.generateTagsFromCategory(updates.category);
+      updates.tags = this.generateTagsFromCategory(updates.category as ProductCategory);
     }
 
     // Actualizar
@@ -139,6 +139,43 @@ export const ProductService = {
   async deleteProduct(id: string): Promise<void> {
     await this.getProductById(id);
     await ProductModel.delete(id);
-  }
+  },
 
+  // Generar tags automáticamente desde la categoría
+  generateTagsFromCategory(category: ProductCategory): string[] {
+    const tags: string[] = [];
+
+    // Extraer deporte
+    if (category.includes('rugby')) {
+      tags.push('rugby');
+    } else if (category.includes('hockey')) {
+      tags.push('hockey');
+    }
+
+    // Extraer tipo de prenda
+    const categories = category.split('-');
+    if (categories.length > 0) {
+      tags.push(categories[0] ?? ''); // 'camisetas', 'shorts', etc.
+    }
+
+    return tags;
+  },
+
+  // Validar stock disponible
+  async checkStock(productId: string, size: string, color: string, quantity: number): Promise<boolean> {
+    const product = await ProductModel.getById(productId);
+    if (!product) {
+      throw new Error('Producto no encontrado');
+    }
+
+    const stockItem = product.stock.find(s => 
+      s.size === size && s.color === color
+    );
+
+    if (!stockItem) {
+      return false;
+    }
+
+    return stockItem.quantity >= quantity;
+  },
 }
