@@ -117,6 +117,22 @@ export const ProductService = {
     });
   },
 
-  
+  //soft delete
+  async deactivateProduct(id: string): Promise<void> {
+    await this.getProductById(id);
+    await ProductModel.update(id, {
+      isActive: false,
+      updatedAt: new Date(),
+    });
+  },
+
+  //reactivar producto
+  async activateProduct(id: string): Promise<void> {
+    await this.getProductById(id);
+    await ProductModel.update(id, {
+      isActive: true,
+      updatedAt: new Date(),
+    });
+  },
 
 }
