@@ -135,4 +135,10 @@ export const ProductService = {
     });
   },
 
+  //eliminar producto fisicamente
+  async deleteProduct(id: string): Promise<void> {
+    await this.getProductById(id);
+    await ProductModel.delete(id);
+  }
+
 }
