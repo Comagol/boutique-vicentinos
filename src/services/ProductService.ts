@@ -56,6 +56,17 @@ export const ProductService = {
       throw new Error('Product not found');
     }
     return product;
+  },
+
+  //obtener todos los productos activos
+  async getAllActiveProducts(category?: ProductCategory): Promise<Product[]> {
+    const filters: { isActive: boolean; category?: ProductCategory } = {
+      isActive: true
+    };
+    if (category) {
+      filters.category = category;
+    }
+    return await ProductModel.getAll(filters);
   }
 
 }
