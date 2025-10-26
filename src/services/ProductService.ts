@@ -165,7 +165,7 @@ export const ProductService = {
   async checkStock(productId: string, size: string, color: string, quantity: number): Promise<boolean> {
     const product = await ProductModel.getById(productId);
     if (!product) {
-      throw new Error('Producto no encontrado');
+      throw new Error('Product not found');
     }
 
     const stockItem = product.stock.find(s => 
