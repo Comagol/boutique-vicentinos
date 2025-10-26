@@ -49,4 +49,13 @@ export const ProductService = {
     return await ProductModel.create(newProduct);
   },
 
+  //obtener un producto por id
+  async getProductById(id: string): Promise<Product> {
+    const product = await ProductModel.getById(id);
+    if(!product) {
+      throw new Error('Product not found');
+    }
+    return product;
+  }
+
 }
