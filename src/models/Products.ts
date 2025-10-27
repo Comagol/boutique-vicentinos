@@ -1,5 +1,3 @@
-// src/models/Products.ts
-
 import { db } from '../config/firebase';
 import { Product, ProductCategory } from '../types/Product';
 
@@ -97,3 +95,5 @@ export const ProductModel = {
     }
   },
 };
+
+export default ProductModel;
