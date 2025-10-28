@@ -185,5 +185,20 @@ export const OrderService = {
     return await OrderModel.markAsDelivered(orderId);
   },
 
-  
+  // Cancelar ordenes expiradas automaticamente
+  async cancelExpiredOrders(): Promise<number> {
+    const now = new Date();
+    const expiredOrders = await OrderModel.getAll({
+      status: 'pending-payment'
+    });
+
+    let cancelled = 0;
+    for (const order of expiredOrders) {
+      if (order.expiresAt && order.expiresAt < now) {
+        await this.cancelOrder(order.id, 'cancelled-by-time');
+        cancelled++;
+      }
+    }
+    return cancelled;
+  },
 }
