@@ -1,7 +1,7 @@
 import { db } from '../config/firebase';
 import { OrderModel } from '../models/Orders';
 import { ProductModel } from '../models/Products';
-import { CustomerInfo, Order, OrderItem } from '../types/Order';
+import { CustomerInfo, Order, OrderItem, OrderStatus } from '../types/Order';
 import { Product } from '../types/Product';
 
 //configuracion de la reserva
@@ -92,5 +92,30 @@ export const OrderService = {
       const productRef = db.collection('products').doc(item.productId);
       batch.update(productRef, { stock: updatedStock });
     }
-  }
+
+    //creo la orden
+    const orderRef = db.collection('orders').doc();
+    const orderData = {
+      orderNumber,
+      customer,
+      items: orderItems,
+      status: 'pending-payment' as OrderStatus,
+      total,
+      paymentMethod,
+      expiresAt,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    batch.set(orderRef, orderData);
+
+    //ejecuto todas las operaciones juntas con batch
+    await batch.commit();
+
+    //retorno la orden creada
+    const doc = await orderRef.get();
+    return {
+      id: doc.id,
+      ...orderData,
+    };
+  },
 }
