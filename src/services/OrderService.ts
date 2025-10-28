@@ -52,6 +52,17 @@ export const OrderService = {
     }, 0);
 
     //Creo items con la informacion completa
-    
+    const orderItems: OrderItem[] = items.map(item => {
+      const product = productData.find(p => p.id === item.productId)!;
+      return {
+        productId: product.id,
+        productName: product.name,
+        size: item.size,
+        color: item.color,
+        quantity: item.quantity,
+        price: product.discountPrice || product.price,
+        reservedStock: true,
+      };
+    });
   }
 }
