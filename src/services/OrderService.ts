@@ -64,5 +64,17 @@ export const OrderService = {
         reservedStock: true,
       };
     });
+
+    //genero un numero de orden unico
+    const orderNumber = await this.generateOrderNumber();
+
+    //calculo la fecha de expiracion de la reserva
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + RESERVATION_DAYS);
+
+    //reservo el stock con batch
+    const batch = db.batch();
+
+    //reservo stock (descontar)
   }
 }
