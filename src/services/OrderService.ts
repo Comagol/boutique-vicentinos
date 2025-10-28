@@ -145,6 +145,21 @@ export const OrderService = {
     const batch = db.batch();
 
     //reponer stock (aumentar)
-    
+    for (const item of order.items) {
+      const product = await ProductModel.getById(item.productId);
+      if(!product) continue;
+
+      const updatedStock = product.stock.map(stockItem => {
+        if (stockItem.size === item.size && stockItem.color == item.colot) {
+          return {
+            ...stockItem,
+            quantity: stockItem.quantity + item.quantity,
+          };
+        }
+        return stockItem;
+      });
+      const productRef = db.collection('products').doc(item.productId);
+      batch.update(productRef, { stock: updatedStock });
+    }
   }
 }
