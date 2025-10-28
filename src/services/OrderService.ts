@@ -175,5 +175,15 @@ export const OrderService = {
   },
 
   //marcar como entregado
+  async markAsDelivered(orderId: string): Promise<Order> {
+    const order = await this.getOrderById(orderId);
+
+    if (order.status !== 'payment-confirmed') {
+      throw new Error(`Only orders with status payment confirmed can be marked as delivered`);
+    }
+
+    return await OrderModel.markAsDelivered(orderId);
+  },
+
   
 }
