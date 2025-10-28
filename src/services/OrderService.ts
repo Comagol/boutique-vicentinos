@@ -33,7 +33,25 @@ export const OrderService = {
         s => s.size === item.size && s.color === item.color
       );
 
-      
+      if(!stockItem) {
+        throw new Error(`Stock item not found for the ${product.name} in size ${item.size} and color ${item.color}`)
+      }
+
+      if(stockItem.quantity < item.quantity) {
+        throw new Error(`Not enough stock for the ${product.name} in size ${item.size} and color ${item.color}`)
+      }
+
+      productData.push(product);      
     }
+
+    //calculo el total
+    const total = items.reduce((sum, item) => {
+      const product = productData.find(p => p.id === item.productId)!;
+      const price = product.discountPrice || product.price;
+      return sum + (price * item.quantity);
+    }, 0);
+
+    //Creo items con la informacion completa
+    
   }
 }
