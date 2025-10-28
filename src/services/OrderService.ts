@@ -161,5 +161,19 @@ export const OrderService = {
       const productRef = db.collection('products').doc(item.productId);
       batch.update(productRef, { stock: updatedStock });
     }
-  }
+
+    //cambio el estado de la orden
+    const orderRef = db.collection('orders').doc(orderId);
+    batch.update(orderRef, {
+      status: reason,
+      updatedAt: new Date(),
+    });
+
+    await batch.commit();
+
+    return (await OrderModel.getById(orderId))!;
+  },
+
+  //marcar como entregado
+  
 }
