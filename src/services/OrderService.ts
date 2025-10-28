@@ -76,5 +76,21 @@ export const OrderService = {
     const batch = db.batch();
 
     //reservo stock (descontar)
+    for(const item of items) {
+      const product = await ProductModel.getById(item.productId);
+      if(!product) throw new Error(`Product ${item.productId} not found`);
+
+      const updatedStock = product.stock.map(stockItem => {
+        if(stockItem.size === item.size && stockItem.color === item.color) {
+          return {
+            ...stockItem,
+            quantity: stockItem.quantity - item.quantity,
+          };
+        }
+        return stockItem;
+      });
+      const productRef = db.collection('products').doc(item.productId);
+      batch.update(productRef, { stock: updatedStock });
+    }
   }
 }
