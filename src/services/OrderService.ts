@@ -118,4 +118,33 @@ export const OrderService = {
       ...orderData,
     };
   },
+
+  //corfirmo el pago
+  async confirmPayment(orderId: string, paymentId: string): Promise<Order> {
+    const order = await this.getOrderById(orderId);
+
+    if (order.status !== 'pending-payment') {
+      throw new Error(`Order ${orderId} is not pending payment`);
+    }
+
+    return await OrderModel.confirmPayment(orderId, paymentId);
+  },
+
+  //cancelar orden y devolver stock
+  async cancelOrder(
+    orderId: string,
+    reason: 'manually-cancelled' | 'cancelled-by-time' = 'manually-cancelled'
+  ): Promise<Order> {
+    const order = await this.getOrderById(orderId);
+
+    if (order.status !== 'pending-payment') {
+      throw new Error(`Only orders with status pending payment can be canceled`);
+    }
+
+    //reponer stock con batch y modificar el estado
+    const batch = db.batch();
+
+    //reponer stock (aumentar)
+    
+  }
 }
