@@ -209,5 +209,14 @@ export const OrderService = {
       throw new Error(`Order ${id} not found`);
     }
     return order;
-  }
+  },
+
+  //obtengo orden por numero
+  async getOrderByNumber(orderNumber: string): Promise<Order> {
+    const order = await OrderModel.getByOrderNumber(orderNumber);
+    if(!order) {
+      throw new Error(`Order ${orderNumber} not found`);
+    }
+    return order;
+  },
 }
