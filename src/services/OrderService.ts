@@ -201,4 +201,13 @@ export const OrderService = {
     }
     return cancelled;
   },
+
+  //obtener orden por ID
+  async getOrderById(id: string): Promise<Order> {
+    const order = await OrderModel.getById(id);
+    if(!order) {
+      throw new Error(`Order ${id} not found`);
+    }
+    return order;
+  }
 }
