@@ -239,5 +239,17 @@ export const OrderService = {
       return this.generateOrderNumber();
     }
     return orderNumber;
-  }
+  },
+
+  //verifico ordenes proximas a expirar
+  async getOrdersExpiringSoon(hours: number): Promise<Order[]> {
+    const orders = await OrderModel.getAll({ status: 'pending-payment' });
+    const now = new Date();
+    const expirationThreshold = new Date(now.getTime() + hours * 60 * 60 * 1000);
+
+    return orders.filter(order => {
+      if (!order.expiresAt) return false;
+      return order.expiresAt <= expirationThreshold;
+    });
+  },
 }
