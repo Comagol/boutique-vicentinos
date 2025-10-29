@@ -226,5 +226,18 @@ export const OrderService = {
     customerEmail?: string;
   }): Promise<Order[]> {
     return await OrderModel.getAll(filters);
+  },
+
+  //generar numero de orden unico
+  async generateOrderNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const random = Math.floor(Math.random() * 1000000).toString().padStart(4, '0');
+    const orderNumber = `${year}-${random}`;
+
+    const existing = await OrderModel.getByOrderNumber(orderNumber);
+    if(existing) {
+      return this.generateOrderNumber();
+    }
+    return orderNumber;
   }
 }
