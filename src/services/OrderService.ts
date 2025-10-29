@@ -150,7 +150,7 @@ export const OrderService = {
       if(!product) continue;
 
       const updatedStock = product.stock.map(stockItem => {
-        if (stockItem.size === item.size && stockItem.color == item.colot) {
+        if (stockItem.size === item.size && stockItem.color == item.color) {
           return {
             ...stockItem,
             quantity: stockItem.quantity + item.quantity,
