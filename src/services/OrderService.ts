@@ -219,4 +219,12 @@ export const OrderService = {
     }
     return order;
   },
+
+  //obtengo todas las ordenes
+  async getAllOrders(filters?: {
+    status?: OrderStatus;
+    customerEmail?: string;
+  }): Promise<Order[]> {
+    return await OrderModel.getAll(filters);
+  }
 }
