@@ -80,5 +80,17 @@ export const AdminModel = {
     } catch (error) {
       throw new Error(`Error getting admins: ${error}`);
     }
-  }
+  },
+
+  //actualizar admin
+  async update(id: string, updates: Partial<AdminUser>): Promise<AdminUser> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).update(adminToFireStore(updates));
+      return (await this.getById(id))!;
+    } catch (error) {
+      throw new Error(`Error updating admin: ${error}`);
+    }
+  },
+
+  
 }
