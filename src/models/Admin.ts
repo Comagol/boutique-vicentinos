@@ -1,2 +1,6 @@
-// Modelo Admin (usando los mismos patrones que Products y Orders)
+// Modelo Admin
 
+import { db } from '../config/firebase';
+import { AdminUser } from '../types/User';
+
+const COLLECTION_NAME = 'admins';
