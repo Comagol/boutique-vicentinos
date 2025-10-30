@@ -100,4 +100,4 @@ export const AdminModel = {
       throw new Error(`Error deleting admin: ${error}`);
     }
   }
-}
+};
