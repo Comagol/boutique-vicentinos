@@ -92,5 +92,12 @@ export const AdminModel = {
     }
   },
 
-  
+  //eliminar admin
+  async delete(id: string): Promise<void> {
+    try {
+      await db.collection(COLLECTION_NAME).doc(id).delete();
+    } catch (error) {
+      throw new Error(`Error deleting admin: ${error}`);
+    }
+  }
 }
