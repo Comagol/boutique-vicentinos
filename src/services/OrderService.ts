@@ -231,7 +231,7 @@ export const OrderService = {
   //generar numero de orden unico
   async generateOrderNumber(): Promise<string> {
     const year = new Date().getFullYear();
-    const random = Math.floor(Math.random() * 1000000).toString().padStart(4, '0');
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     const orderNumber = `${year}-${random}`;
 
     const existing = await OrderModel.getByOrderNumber(orderNumber);
