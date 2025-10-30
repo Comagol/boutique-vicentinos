@@ -66,4 +66,19 @@ export const AdminModel = {
       throw new Error(`Error getting admin by email: ${error}`);
     }
   },
+
+  //LISTAR todos los admins
+  async getAll(filters?: {isActive?: boolean}): Promise<AdminUser[]> {
+    try {
+      let query: FirebaseFirestore.Query = db.collection(COLLECTION_NAME);
+
+      if (filters?.isActive !== undefined) {
+        query = query.where('isActive', '==', filters.isActive);
+      }
+      const snapshot = await query.get();
+      return snapshot.docs.map(doc => firestoreToAdmin(doc.data(), doc.id));
+    } catch (error) {
+      throw new Error(`Error getting admins: ${error}`);
+    }
+  }
 }
