@@ -49,5 +49,21 @@ export const AdminModel = {
     } catch (error) {
       throw new Error(`Error getting admin by ID: ${error}`);
     }
-  }
+  },
+
+  //OBTENER ADMIN POR EMAIL
+  async getByEmail(email:string): Promise<AdminUser | null> {
+    try {
+      const snapshot = await db.collection(COLLECTION_NAME)
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+
+      if (snapshot.empty) return null;
+      const doc = snapshot.docs[0]!;
+      return firestoreToAdmin(doc.data()!, doc.id);
+    } catch (error) {
+      throw new Error(`Error getting admin by email: ${error}`);
+    }
+  },
 }
