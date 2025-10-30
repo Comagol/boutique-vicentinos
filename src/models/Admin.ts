@@ -22,3 +22,21 @@ const adminToFireStore = (admin: Partial<AdminUser>): any => {
   const { id, ...data } = admin;
   return data;
 };
+
+export const AdminModel = {
+  //CREAR ADMIN
+  async create(adminData: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<AdminUser> {
+    try {
+      const docRef = await db.collection(COLLECTION_NAME).add({
+        ...adminData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const doc = await docRef.get();
+      return firestoreToAdmin(doc.data()!, doc.id);
+    } catch (error) {
+      throw new Error(`Error creating admin: ${error}`);
+    }
+  }
+}
