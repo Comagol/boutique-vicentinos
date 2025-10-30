@@ -38,5 +38,16 @@ export const AdminModel = {
     } catch (error) {
       throw new Error(`Error creating admin: ${error}`);
     }
+  },
+
+  //OBTENER ADMIN POR ID
+  async getById(id: string): Promise<AdminUser | null> {
+    try {
+      const doc = await db.collection(COLLECTION_NAME).doc(id).get();
+      if(!doc.exists) return null;
+      return firestoreToAdmin(doc.data()!, doc.id);
+    } catch (error) {
+      throw new Error(`Error getting admin by ID: ${error}`);
+    }
   }
 }
