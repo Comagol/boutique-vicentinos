@@ -8,6 +8,7 @@ export interface AdminUser {
   role: AdminRole;
   createdAt: Date;
   updatedAt: Date;
+  lastLoginAt?: Date;
   isActive: boolean;
 }
 
