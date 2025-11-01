@@ -12,13 +12,13 @@ export const authController = {
       }
 
       const result = await AuthService.login(email, password);
-      res.status(200).json({
+      return res.status(200).json({
         message: 'Login successful',
         admin: result.admin,
         token: result.token,
       });
     } catch (error: any) {
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal server error',
         message: error.message,
       });
@@ -35,13 +35,13 @@ export const authController = {
       }
 
       const result = await AuthService.signup(email, password, name);
-      res.status(201).json({
+      return res.status(201).json({
         message: 'Admin created successfully',
         admin: result.admin,
         token: result.token,
       });
     } catch (error: any) {
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal server error',
         message: error.message,
       });
@@ -62,17 +62,14 @@ export const authController = {
       }
 
       await AuthService.changePassword(req.user.id, oldPassword, newPassword);
-      res.status(200).json({
+      return res.status(200).json({
         message: 'Password changed successfully',
       });
     } catch (error: any) {
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Internal server error',
         message: error.message,
       });
-      
     }
-  },
-
-  
+  }
 }
