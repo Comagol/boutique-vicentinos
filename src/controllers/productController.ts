@@ -1,4 +1,4 @@
-import { response, Response } from "express";
+import { Response } from "express";
 import { ProductService } from "../services/ProductService";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { ProductCategory } from "../types/Product";
