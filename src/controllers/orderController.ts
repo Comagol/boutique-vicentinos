@@ -1,0 +1,62 @@
+import { Request, Response } from "express";
+import { OrderService } from "../services/OrderService";
+import { AuthenticatedRequest } from "../middleware/auth";
+import { OrderStatus } from "../types/";
+
+export const orderController = {
+  //Crear orden POST (public)
+  async createOrder(req: Request, res: Response) {
+    try {
+      const { customer, items, paymentMethod } = req.body;
+
+      if(!customer || !items || !paymentMethod) {
+        return res.status(400).json({
+          error: 'Customer, items and payment method are required'
+        });
+      }
+
+      if(!customer.name || !customer.email || !customer.phone) {
+        return res.status(400).json({
+          error: 'Customer name, email and phone are required'
+        });
+      }
+
+      if(!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          error: 'Items must be an array and must contain at least one item'
+        });
+      }
+
+      //validar items
+      for (const item of items) {
+        if(!item.productId || !item.size || !item.color || !item.quantity) {
+          return res.status(400).json({
+            error: 'Each item must have a productId, size, color and quantity'
+          });
+        }
+
+        if(item.quantity <= 0) {
+          return res.status(400).json({
+            error: 'Quantity must be greater than 0'
+          });
+        }
+      }
+
+      const order = await OrderService.createOrder(
+        customer,
+        items,
+        paymentMethod
+      );
+
+      return res.status(201).json({
+        message: 'Order created successfully',
+        order,
+      });
+    } catch (error: any) {
+      const statusCode = error.message.includes('not found') ||
+                         error.message.includes('Stock') 
+                         ? 404 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
+  }
+}
