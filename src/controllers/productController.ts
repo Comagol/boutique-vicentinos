@@ -106,5 +106,20 @@ export const productController = {
       const statusCode = error.message === 'Product not found' ? 404 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
+  },
+
+  //GET all products including deactivated
+  async getAllProductsAdmin(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { category } = req.query;
+      const products = await ProductService.getAllProducts(category as ProductCategory);
+      return res.status(200).json({
+        message: 'Products fetched successfully',
+        products,
+        count: products.length,
+      });
+    } catch (error: any) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
   }
 }
