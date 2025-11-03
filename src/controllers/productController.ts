@@ -35,5 +35,19 @@ export const productController = {
       const statusCode = error.message === 'Product not found' ? 404 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
+  },
+
+  //POST create product
+  async createProduct(req: AuthenticatedRequest, res: Response) {
+    try {
+      const product = await ProductService.createProduct(req.body);
+      return res.status(201).json({
+        message: 'Product created successfully',
+        product,
+      });
+    } catch (error: any) {
+      const statusCode = error.message.includes('required') ? 400 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
   }
 }
