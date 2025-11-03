@@ -80,4 +80,20 @@ export const productController = {
     }
   },
 
+  //POST activate product
+  async activateProduct(req:AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      await ProductService.activateProduct(id as string);
+      return res.status(200).json({
+        message: 'Product activated successfully',
+      });
+    } catch (error: any) {
+      const statusCode = error.message === 'Product not found' ? 404 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
+  },
+
+  //POST deactivate product
+
 }
