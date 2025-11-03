@@ -49,5 +49,22 @@ export const productController = {
       const statusCode = error.message.includes('required') ? 400 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
-  }
+  },
+
+  //PUT update prduct
+  async updateProduct(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const product = await ProductService.updateProduct(id as string, req.body);
+      return res.status(200).json({
+        message: 'Product updated successfully',
+        product,
+      });
+    } catch (error: any) {
+      const statusCode = error.message.includes('required') ? 400 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
+  },
+
+  
 }
