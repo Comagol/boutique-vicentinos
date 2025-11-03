@@ -26,9 +26,6 @@ export const productController = {
   async getProductById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      if(!id) {
-        return res.status(400).json({ message: 'Product ID is required' });
-      }
       const product = await ProductService.getProductById(id as string);
       return res.status(200).json({
         message: 'Product fetched successfully',
