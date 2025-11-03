@@ -58,5 +58,28 @@ export const orderController = {
                          ? 404 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
+  },
+
+  //GET obtener order por numero de orden (public)
+  async getOrderByNumber(req: Request, res: Response) {
+    try {
+      const { orderNumber } = req.body;
+
+      if(!orderNumber) {
+        return res.status(400).json({
+          error: 'Order number is required'
+        });
+      }
+
+      const order = await OrderService.getOrderByNumber(orderNumber);
+
+      return res.status(200).json({
+        message: 'Order fetched successfully',
+        order,
+      });
+    } catch (error: any) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
   }
 }
