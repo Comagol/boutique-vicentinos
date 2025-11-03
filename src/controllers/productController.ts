@@ -1,11 +1,11 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { ProductService } from "../services/ProductService";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { ProductCategory } from "../types/Product";
 
 export const productController = {
-  //Get all products
-  async getAllProducts(req: AuthenticatedRequest, res: Response) {
+  //Get all products (PUBLIC)
+  async getAllProducts(req: Request, res: Response) {
     try {
       const { category } = req.query;
       const products = await ProductService.getAllActiveProducts(category as ProductCategory | undefined);
@@ -22,8 +22,8 @@ export const productController = {
     }
   },
 
-  //Get product by id
-  async getProductById(req: AuthenticatedRequest, res: Response) {
+  //Get product by id (PUBLIC)
+  async getProductById(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const product = await ProductService.getProductById(id as string);
@@ -37,7 +37,7 @@ export const productController = {
     }
   },
 
-  //POST create product
+  //POST create product (ADMIN)
   async createProduct(req: AuthenticatedRequest, res: Response) {
     try {
       const product = await ProductService.createProduct(req.body);
@@ -51,7 +51,7 @@ export const productController = {
     }
   },
 
-  //PUT update prduct
+  //PUT update prduct (ADMIN)
   async updateProduct(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
@@ -66,7 +66,7 @@ export const productController = {
     }
   },
 
-  //Delete product
+  //Delete product (ADMIN)
   async deleteProduct(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
@@ -80,7 +80,7 @@ export const productController = {
     }
   },
 
-  //POST activate product
+  //POST activate product (ADMIN)
   async activateProduct(req:AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
@@ -94,7 +94,7 @@ export const productController = {
     }
   },
 
-  //POST deactivate product
+  //POST deactivate product (ADMIN)
   async deactivateProduct(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
@@ -108,7 +108,7 @@ export const productController = {
     }
   },
 
-  //GET all products including deactivated
+  //GET all products including deactivated (ADMIN)
   async getAllProductsAdmin(req: AuthenticatedRequest, res: Response) {
     try {
       const { category } = req.query;
