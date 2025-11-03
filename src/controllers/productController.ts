@@ -95,5 +95,16 @@ export const productController = {
   },
 
   //POST deactivate product
-
+  async deactivateProduct(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      await ProductService.deactivateProduct(id as string);
+      return res.status(200).json({
+        message: 'Product deactivated successfully',
+      });
+    } catch (error: any) {
+      const statusCode = error.message === 'Product not found' ? 404 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
+  }
 }
