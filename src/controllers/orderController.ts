@@ -110,5 +110,25 @@ export const orderController = {
         message: error.message,
        });
     }
-  }
+  },
+
+  //Get obtener orden por id (Admin)
+  async getOrderById(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params
+      if(!id) {
+        return res.status(400).json({
+          error: 'Order ID is required'
+        });
+      }
+      const order = await OrderService.getOrderById(id as string);
+      return res.status(200).json({
+        message: 'Order fetched successfully',
+        order,
+      });
+    } catch (error: any) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
+  },
 }
