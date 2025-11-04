@@ -131,4 +131,27 @@ export const orderController = {
       return res.status(statusCode).json({ message: error.message });
     }
   },
+
+  //post cancelar orden (public)
+  async cancelOrder(req:Request, res: Response) {
+    try {
+      const { orderId } = req.body;
+
+      if(!orderId) {
+        return res.status(400).json({
+          error: 'Order ID is required'
+        });
+      }
+
+      const order = await OrderService.cancelOrder(orderId as string);
+      return res.status(200).json({
+        message: 'Order cancelled successfully',
+        order,
+      });
+    } catch (error: any) {
+      const statusCode = error.message.includes('not found') ||
+                         error.message.includes('Only orders with status pending payment can be canceled') ? 400 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
+  }
 }
