@@ -174,5 +174,29 @@ export const orderController = {
                          error.message.includes('Only orders with status payment confirmed can be marked as delivered') ? 400 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
+  },
+
+  //Get de las ordenes proximas a expirar (Admin)
+  async getOrdersExpiringSoon(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { hours } = req.query;
+      const hoursNumber = hours ? parseInt(hours as string, 10) : 24;
+
+      if(isNaN(hoursNumber) || hoursNumber <= 0) {
+        return res.status(400).json({error: 'Hours must be a positive number'});
+      }
+
+      const orders = await OrderService.getOrdersExpiringSoon(hoursNumber);
+      return res.status(200).json({
+        message: 'Orders expiring soon fetched successfully',
+        orders,
+        count: orders.length,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        error: 'Internal server error',
+        message: error.message,
+      });
+    }
   }
 }
