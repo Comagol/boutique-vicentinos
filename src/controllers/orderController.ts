@@ -81,5 +81,34 @@ export const orderController = {
       const statusCode = error.message.includes('not found') ? 404 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
+  },
+
+  //GET obtener todas las ordenes (Admin)
+  async getAllOrders(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { status, customerEmail } = req.query;
+
+      const filters: { status?: OrderStatus; customerEmail?: string } = {};
+
+      if(status) {
+        filters.status = status as OrderStatus;
+      }
+
+      if(customerEmail) {
+        filters.customerEmail = customerEmail as string;
+      }
+
+      const orders = await OrderService.getAllOrders(filters);
+      return res.status(200).json({
+        message: 'Orders fetched successfully',
+        orders,
+        count: orders.length,
+      })
+    } catch (error: any) {
+      return res.status(500).json({
+        error: 'Internal server error',
+        message: error.message,
+       });
+    }
   }
 }
