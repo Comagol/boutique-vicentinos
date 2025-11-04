@@ -153,5 +153,26 @@ export const orderController = {
                          error.message.includes('Only orders with status pending payment can be canceled') ? 400 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
+  },
+
+  //Post para marcar orden como entregada (Admin)
+  async markAsDelivered(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { orderId } = req.body;
+
+      if(!orderId) {
+        return res.status(400).json({error: ' order ID is required'})
+      }
+
+      const order = await OrderService.markAsDelivered(orderId as string);
+      return res.status(200).json({
+        message: 'Order marked as delivered successfully',
+        order,
+      });
+    } catch (error: any) {
+      const statusCode = error.message.includes('not found') ||
+                         error.message.includes('Only orders with status payment confirmed can be marked as delivered') ? 400 : 500;
+      return res.status(statusCode).json({ message: error.message });
+    }
   }
 }
