@@ -198,5 +198,31 @@ export const orderController = {
         message: error.message,
       });
     }
+  },
+
+   // POST - Confirmar pago (PÚBLICO o ADMIN - cuando se procesa Mercado Pago)
+   async confirmPayment(req: Request, res: Response) {
+    try {
+      const { orderId, paymentId } = req.body;
+
+      if (!orderId || !paymentId) {
+        return res.status(400).json({ 
+          error: 'orderId and paymentId are required' 
+        });
+      }
+
+      const order = await OrderService.confirmPayment(orderId, paymentId);
+
+      return res.status(200).json({
+        message: 'Payment confirmed successfully',
+        order,
+      });
+    } catch (error: any) {
+      const statusCode = error.message.includes('not found') || 
+                        error.message.includes('not pending') 
+                        ? 400 : 500;
+
+      return res.status(statusCode).json({ error: error.message });
+    }
   }
 }
