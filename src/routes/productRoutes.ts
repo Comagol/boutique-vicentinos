@@ -32,3 +32,5 @@ router.post('/:id/deactivate', productController.deactivateProduct);
 
 //Activate product /api/products/:id/activate (ADMIN)
 router.post('/:id/activate', productController.activateProduct);
+
+export default router;
