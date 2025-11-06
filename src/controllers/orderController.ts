@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { OrderService } from "../services/OrderService";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { OrderStatus } from "../types/";
+import { PaymentService } from "../services/PaymentService";
 
 export const orderController = {
   //Crear orden POST (public)
