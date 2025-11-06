@@ -16,3 +16,5 @@ router.post('/cancel', orderController.cancelOrder);
 
 //Post /api/orders/confirm-payment confirmar pago (public)
 router.post('/confirm-payment', orderController.confirmPayment);
+
+// ======== PRIVATE ROUTES ==========
