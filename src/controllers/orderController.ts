@@ -200,7 +200,7 @@ export const orderController = {
     }
   },
 
-   // POST - Confirmar pago (PÚBLICO o ADMIN - cuando se procesa Mercado Pago)
+   // POST - Confirmar pago (PÚBLICO)
    async confirmPayment(req: Request, res: Response) {
     try {
       const { orderId, paymentId } = req.body;
