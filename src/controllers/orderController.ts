@@ -249,15 +249,13 @@ export const orderController = {
     try {
       const { type, data } = req.body;
 
-      // Mercado Pago envía notificaciones de tipo 'payment'
       if (type === 'payment') {
         const paymentId = data.id;
 
         // Obtener información completa del pago
-        const payment = await PaymentService.verifyPayment(paymentId.toString());
+        const paymentData = await PaymentService.verifyPayment(paymentId.toString());
 
-        // El external_reference es el ID de nuestra orden
-        const orderId = payment.body.external_reference;
+        const orderId = paymentData.external_reference || paymentData.body?.external_reference;
 
         if (!orderId) {
           console.error('Webhook: No order ID found in payment');
@@ -265,11 +263,12 @@ export const orderController = {
         }
 
         // Verificar estado del pago
-        if (payment.body.status === 'approved') {
+        const status = paymentData.status || paymentData.body?.status;
+        if (status === 'approved') {
           // Pago aprobado - confirmar orden
           await OrderService.confirmPayment(orderId, paymentId.toString());
           console.log(`Payment approved for order ${orderId}`);
-        } else if (payment.body.status === 'rejected' || payment.body.status === 'cancelled') {
+        } else if (status === 'rejected' || status === 'cancelled') {
           // Pago rechazado - cancelar orden y devolver stock
           await OrderService.cancelOrder(orderId, 'manually-cancelled');
           console.log(`Payment rejected/cancelled for order ${orderId}`);

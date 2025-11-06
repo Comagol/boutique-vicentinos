@@ -9,15 +9,16 @@ const client = new MercadoPagoConfig({
   },
 });
 
-//Creo las intancias de los recursos
+//Creo las instancias de los recursos
 const preference = new Preference(client);
-const payment = new Payment(client);
+const paymentClient = new Payment(client);
 
 export const PaymentService = {
   // creo preferencia de pago
   async createPaymentPreference(order: Order): Promise<string> {
     try {
       const items = order.items.map(item=> ({
+        id: item.productId,
         title: item.productName,
         description: `${item.size} - ${item.color}`,
         quantity: item.quantity,
@@ -40,7 +41,7 @@ export const PaymentService = {
       //creo la preferencia de pago
       const response = await preference.create({ body: preferenceData });
 
-      return response.body.init_point;
+      return response.init_point || '';
     } catch (error: any) {
       throw new Error(`Failed to create payment preference: ${error.message}`);
     }
@@ -49,8 +50,8 @@ export const PaymentService = {
   // verifico notificaciones de mercado pago
   async verifyPayment(notificationId: string): Promise<any> {
     try {
-      const payment = await payment.get(notificationId);
-      return payment;
+      const paymentData = await paymentClient.get({ id: notificationId });
+      return paymentData;
     } catch (error: any) {
       throw new Error(`Failed to verify payment: ${error.message}`);
     }
