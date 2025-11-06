@@ -31,3 +31,5 @@ router.post('/mark-delivered', orderController.markAsDelivered);
 
 //Get /api/orders/expiring-soon obtener ordenes proximas a expirar (Admin)
 router.get('/expiting-soon', orderController.getOrdersExpiringSoon);
+
+export default router;
