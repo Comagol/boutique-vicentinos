@@ -8,4 +8,11 @@ const router = Router();
 //Post /api/orders crear orden (public)
 router.post('/', orderController.createOrder);
 
+//Get /api/orders/number/:orderNumber obtener orden por numero de orden (public)
+router.get('/number/:orderNumber', orderController.getOrderByNumber);
 
+//Post /api/orders/cancel cancelar orden (public)
+router.post('/cancel', orderController.cancelOrder);
+
+//Post /api/orders/confirm-payment confirmar pago (public)
+router.post('/confirm-payment', orderController.confirmPayment);
