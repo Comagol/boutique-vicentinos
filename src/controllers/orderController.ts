@@ -49,10 +49,27 @@ export const orderController = {
         paymentMethod
       );
 
-      return res.status(201).json({
-        message: 'Order created successfully',
-        order,
-      });
+      if (paymentMethod === 'mercadopago') {
+        try {
+          const paymentUrl = await PaymentService.createPaymentPreference(order);
+          
+          return res.status(201).json({
+            message: 'Order created successfully',
+            order,
+            paymentUrl, // URL para que el cliente redirija y pague
+          });
+        } catch (paymentError: any) {
+          // Si falla crear la preferencia, aún así retornamos la orden
+          // (el admin puede crear el pago manualmente después)
+          return res.status(201).json({
+            message: 'Order created successfully, but payment URL could not be generated',
+            order,
+            error: paymentError.message,
+          });
+        }
+      }
+
+      return res.status(201).json({ message: 'Order created successfully', order });
     } catch (error: any) {
       const statusCode = error.message.includes('not found') ||
                          error.message.includes('Stock') 
