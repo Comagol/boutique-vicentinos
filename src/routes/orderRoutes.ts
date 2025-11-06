@@ -25,3 +25,9 @@ router.get('/', orderController.getAllOrders);
 
 //Get /api/orders/:id obtener orden por id (Admin)
 router.get('/:id', orderController.getOrderById);
+
+//Post /api/orders/mark-delivered marcar orden como entregada (Admin)
+router.post('/mark-delivered', orderController.markAsDelivered);
+
+//Get /api/orders/expiring-soon obtener ordenes proximas a expirar (Admin)
+router.get('/expiting-soon', orderController.getOrdersExpiringSoon);
