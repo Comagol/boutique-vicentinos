@@ -81,7 +81,7 @@ export const orderController = {
   //GET obtener order por numero de orden (public)
   async getOrderByNumber(req: Request, res: Response) {
     try {
-      const { orderNumber } = req.body;
+      const { orderNumber } = req.params;
 
       if(!orderNumber) {
         return res.status(400).json({
@@ -241,6 +241,48 @@ export const orderController = {
                         ? 400 : 500;
 
       return res.status(statusCode).json({ error: error.message });
+    }
+  },
+
+  // POST - Webhook de Mercado Pago (notificaciones automáticas)
+  async handleWebhook(req: Request, res: Response) {
+    try {
+      const { type, data } = req.body;
+
+      // Mercado Pago envía notificaciones de tipo 'payment'
+      if (type === 'payment') {
+        const paymentId = data.id;
+
+        // Obtener información completa del pago
+        const payment = await PaymentService.verifyPayment(paymentId.toString());
+
+        // El external_reference es el ID de nuestra orden
+        const orderId = payment.body.external_reference;
+
+        if (!orderId) {
+          console.error('Webhook: No order ID found in payment');
+          return res.status(200).json({ received: true });
+        }
+
+        // Verificar estado del pago
+        if (payment.body.status === 'approved') {
+          // Pago aprobado - confirmar orden
+          await OrderService.confirmPayment(orderId, paymentId.toString());
+          console.log(`Payment approved for order ${orderId}`);
+        } else if (payment.body.status === 'rejected' || payment.body.status === 'cancelled') {
+          // Pago rechazado - cancelar orden y devolver stock
+          await OrderService.cancelOrder(orderId, 'manually-cancelled');
+          console.log(`Payment rejected/cancelled for order ${orderId}`);
+        }
+      }
+
+      // Siempre responder 200 a Mercado Pago (importante)
+      // Si respondes error, Mercado Pago seguirá reenviando la notificación
+      return res.status(200).json({ received: true });
+    } catch (error: any) {
+      console.error('Webhook error:', error);
+      // Aún así responder 200 para evitar reenvíos infinitos
+      return res.status(200).json({ received: true });
     }
   }
 }

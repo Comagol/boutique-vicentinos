@@ -1,10 +1,17 @@
-import mercadopago from 'mercadopago';
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { Order } from '../types/Order';
 
-//configurar mercado pago
-mercadopago.configure({
-  access_token: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
+//configurar cliente mercado pago
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
+  options: {
+    timeout: 5000,
+  },
 });
+
+//Creo las intancias de los recursos
+const preference = new Preference(client);
+const payment = new Payment(client);
 
 export const PaymentService = {
   // creo preferencia de pago
@@ -18,7 +25,7 @@ export const PaymentService = {
       }));
 
       //creo la preferencia de pago
-      const preference = {
+      const preferenceData = {
         items,
         external_reference: order.id,
         back_urls: {
@@ -31,7 +38,7 @@ export const PaymentService = {
       };
 
       //creo la preferencia de pago
-      const response = await mercadopago.preferences.create(preference);
+      const response = await preference.create({ body: preferenceData });
 
       return response.body.init_point;
     } catch (error: any) {
@@ -42,7 +49,7 @@ export const PaymentService = {
   // verifico notificaciones de mercado pago
   async verifyPayment(notificationId: string): Promise<any> {
     try {
-      const payment = await mercadopago.payment.findById(notificationId);
+      const payment = await payment.get(notificationId);
       return payment;
     } catch (error: any) {
       throw new Error(`Failed to verify payment: ${error.message}`);
