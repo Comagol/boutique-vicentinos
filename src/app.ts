@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import router from './routes';
 
 dotenv.config();
 
@@ -47,6 +48,9 @@ app.get('/health', (req: Request, res: Response) => {
     timestamp: new Date().toISOString() 
   });
 });
+
+//monto las rutas de api
+app.use('/api', router);
 
 // Manejo de errores
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
