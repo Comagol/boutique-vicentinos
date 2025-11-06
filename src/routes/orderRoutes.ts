@@ -18,3 +18,10 @@ router.post('/cancel', orderController.cancelOrder);
 router.post('/confirm-payment', orderController.confirmPayment);
 
 // ======== PRIVATE ROUTES ==========
+router.use(authenticate, requireAdmin);
+
+//Get /api/orders obtener todas las ordenes (Admin)
+router.get('/', orderController.getAllOrders);
+
+//Get /api/orders/:id obtener orden por id (Admin)
+router.get('/:id', orderController.getOrderById);
