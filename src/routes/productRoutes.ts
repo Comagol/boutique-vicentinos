@@ -4,14 +4,14 @@ import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
-// ======== RUTAS PUBLICAS ==========
+// ======== PUBLIC ROUTES ==========
 //Get all products /api/products (PUBLIC)
 router.get('/', productController.getAllProducts);
 
 //Get product by id /api/products/:id (PUBLIC)
 router.get('/:id', productController.getProductById);
 
-// ======== RUTAS ADMIN ==========
+// ======== ADMIN ROUTES ==========
 
 router.use(authenticate, requireAdmin);
 
@@ -26,3 +26,9 @@ router.put('/:id', productController.updateProduct);
 
 //Delete product /api/products/:id (ADMIN)
 router.delete('/:id', productController.deleteProduct);
+
+//Deactivate product /api/products/:id/deactivate (ADMIN)
+router.post('/:id/deactivate', productController.deactivateProduct);
+
+//Activate product /api/products/:id/activate (ADMIN)
+router.post('/:id/activate', productController.activateProduct);
