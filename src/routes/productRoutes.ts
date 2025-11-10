@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { productController } from '../controllers/productController';
 import { authenticate, requireAdmin } from '../middleware/auth';
+import { uploadMultipleMiddleware } from '../middleware/upload';
 
 const router = Router();
 
@@ -19,18 +20,18 @@ router.use(authenticate, requireAdmin);
 router.get('/admin/all', productController.getAllProductsAdmin);
 
 //Post create product /api/products (ADMIN)
-router.post('/', productController.createProduct);
+router.post('/', uploadMultipleMiddleware, productController.createProduct);
 
 //Put update product /api/products/:id (ADMIN)
-router.put('/:id', productController.updateProduct);
+router.put('/:id', uploadMultipleMiddleware, productController.updateProduct);
 
 //Delete product /api/products/:id (ADMIN)
-router.delete('/:id', productController.deleteProduct);
+router.delete('/:id', uploadMultipleMiddleware, productController.deleteProduct);
 
 //Deactivate product /api/products/:id/deactivate (ADMIN)
-router.post('/:id/deactivate', productController.deactivateProduct);
+router.post('/:id/deactivate', uploadMultipleMiddleware, productController.deactivateProduct);
 
 //Activate product /api/products/:id/activate (ADMIN)
-router.post('/:id/activate', productController.activateProduct);
+router.post('/:id/activate', uploadMultipleMiddleware, productController.activateProduct);
 
 export default router;

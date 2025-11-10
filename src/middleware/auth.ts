@@ -2,10 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/AuthService';
 import { JwtPayload } from '../types/User';
 
-//extiendo el request para inclui user
+//extiendo el request para incluir user y files
 export interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
-  files?: Express.Multer.File[];
+  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] } | undefined;
 }
 
 //middleware de autenticacion
