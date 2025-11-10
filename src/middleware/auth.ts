@@ -6,6 +6,7 @@ import { header } from 'express-validator';
 //extiendo el request para inclui user
 export interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
+  files?: Express.Multer.File[];
 }
 
 //middleware de autenticacion
