@@ -34,3 +34,17 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   }
 };
 
+//configuracion de multer
+export const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 1024 * 1024 * 5, //5MB
+  }
+});
+
+//exporto el middleware de subida de archivos
+export const uploadMiddleware = upload.single('image');
+
+//exporto el middleware de subida de multiples archivos (maximo 8 imagenes)
+export const uploadMultipleMiddleware = upload.array('images', 8);
