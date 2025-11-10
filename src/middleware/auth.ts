@@ -54,4 +54,5 @@ export const requireAdmin = (
     res.status(403).json({error: 'Forbidden'});
     return;
   }
+  next();
 }

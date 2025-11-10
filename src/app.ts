@@ -56,11 +56,28 @@ app.get('/health', (req: Request, res: Response) => {
 //monto las rutas de api
 app.use('/api', router);
 
-// Manejo de errores
+// Manejo de errores (debe ir ANTES de las rutas 404)
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Algo salió mal!', 
+  console.error('Error capturado:', err);
+  console.error('Stack:', err.stack);
+  
+  // Errores de Multer
+  if (err.name === 'MulterError') {
+    if (err.message === 'File too large') {
+      return res.status(400).json({ 
+        error: 'File too large', 
+        message: 'El archivo excede el tamaño máximo permitido (5MB)' 
+      });
+    }
+    return res.status(400).json({ 
+      error: 'Upload error', 
+      message: err.message 
+    });
+  }
+  
+  // Otros errores
+  return res.status(500).json({ 
+    error: 'Internal server error', 
     message: process.env.NODE_ENV === 'development' ? err.message : 'Error interno del servidor'
   });
 });

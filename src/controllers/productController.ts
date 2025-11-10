@@ -40,9 +40,13 @@ export const productController = {
   //POST create product (ADMIN)
   async createProduct(req: AuthenticatedRequest, res: Response) {
     try {
+      console.log('📦 Creando producto...');
+      console.log('📎 Archivos recibidos:', req.files ? (Array.isArray(req.files) ? req.files.length : 'no es array') : 'ninguno');
+      
       // Si hay archivos subidos, agregar las rutas a req.body.images
       if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         const files = req.files as Express.Multer.File[];
+        console.log('✅ Archivos procesados:', files.length);
         // Construir URLs de las imágenes (rutas relativas que se servirán estáticamente)
         const imageUrls = files.map(file => `/uploads/${file.filename}`);
         
@@ -57,12 +61,16 @@ export const productController = {
         }
       }
       
+      console.log('💾 Guardando producto en Firestore...');
       const product = await ProductService.createProduct(req.body);
+      console.log('✅ Producto creado:', product.id);
+      
       return res.status(201).json({
         message: 'Product created successfully',
         product,
       });
     } catch (error: any) {
+      console.error('❌ Error al crear producto:', error);
       const statusCode = error.message.includes('required') ? 400 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
