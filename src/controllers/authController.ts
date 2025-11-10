@@ -18,6 +18,14 @@ export const authController = {
         token: result.token,
       });
     } catch (error: any) {
+      console.error('Login error:', error);
+      // Si es un error de credenciales inválidas, devolver 401
+      if (error.message === 'Invalid credentials') {
+        return res.status(401).json({
+          error: 'Invalid credentials',
+          message: error.message,
+        });
+      }
       return res.status(500).json({
         error: 'Internal server error',
         message: error.message,
