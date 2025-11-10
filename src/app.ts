@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import path from 'path';
 import router from './routes';
 
 dotenv.config();
@@ -31,6 +32,9 @@ app.use(morgan('combined'));
 // Middleware de parseo de JSON
 app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({extended: true}));
+
+// Middleware para servir archivos estáticos desde la carpeta uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 //Rutas basicas
 app.get('/', (req: Request, res: Response) => {
