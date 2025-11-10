@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/AuthService';
 import { JwtPayload } from '../types/User';
-import { header } from 'express-validator';
 
 //extiendo el request para inclui user
 export interface AuthenticatedRequest extends Request {
