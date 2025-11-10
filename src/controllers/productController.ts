@@ -40,6 +40,23 @@ export const productController = {
   //POST create product (ADMIN)
   async createProduct(req: AuthenticatedRequest, res: Response) {
     try {
+      // Si hay archivos subidos, agregar las rutas a req.body.images
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+        const files = req.files as Express.Multer.File[];
+        // Construir URLs de las imágenes (rutas relativas que se servirán estáticamente)
+        const imageUrls = files.map(file => `/uploads/${file.filename}`);
+        
+        // Si ya hay imágenes en el body, combinarlas; si no, usar solo las subidas
+        if (req.body.images) {
+          const existingImages = typeof req.body.images === 'string' 
+            ? JSON.parse(req.body.images) 
+            : req.body.images;
+          req.body.images = [...existingImages, ...imageUrls];
+        } else {
+          req.body.images = imageUrls;
+        }
+      }
+      
       const product = await ProductService.createProduct(req.body);
       return res.status(201).json({
         message: 'Product created successfully',
