@@ -17,7 +17,7 @@ export const StorageService = {
     try {
       const bucket = storage.bucket();
 
-      const storaPath = `${BUCKET_NAME}/${fileName}`;
+      const storagePath = `${BUCKET_NAME}/${fileName}`;
       const file = bucket.file(storagePath);
 
       await bucket.upload(filePath,{
