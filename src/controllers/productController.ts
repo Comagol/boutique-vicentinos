@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { ProductService } from "../services/ProductService";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { ProductCategory } from "../types/Product";
+import { StorageService } from "../services/StorageService";
 
 export const productController = {
   //Get all products (PUBLIC)
@@ -40,17 +41,21 @@ export const productController = {
   //POST create product (ADMIN)
   async createProduct(req: AuthenticatedRequest, res: Response) {
     try {
-      console.log('📦 Creando producto...');
-      console.log('📎 Archivos recibidos:', req.files ? (Array.isArray(req.files) ? req.files.length : 'no es array') : 'ninguno');
       
-      // Si hay archivos subidos, agregar las rutas a req.body.images
+      let imageUrls: string[] = [];
+      
+      // Si hay archivos subidos, subirlos a Firebase Storage
       if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         const files = req.files as Express.Multer.File[];
-        console.log('✅ Archivos procesados:', files.length);
-        // Construir URLs de las imágenes (rutas relativas que se servirán estáticamente)
-        const imageUrls = files.map(file => `/uploads/${file.filename}`);
         
-        // Si ya hay imágenes en el body, combinarlas; si no, usar solo las subidas
+        // 1. Subir archivos a Firebase Storage
+        console.log('☁️ Subiendo archivos a Firebase Storage...');
+        imageUrls = await StorageService.uploadMultipleFiles(files);
+        
+        // 2. Eliminar archivos temporales locales
+        await StorageService.deleteLocalFiles(files);
+        
+        // 3. Si ya hay imágenes en el body, combinarlas; si no, usar solo las subidas
         if (req.body.images) {
           const existingImages = typeof req.body.images === 'string' 
             ? JSON.parse(req.body.images) 
@@ -61,9 +66,7 @@ export const productController = {
         }
       }
       
-      console.log('💾 Guardando producto en Firestore...');
       const product = await ProductService.createProduct(req.body);
-      console.log('✅ Producto creado:', product.id);
       
       return res.status(201).json({
         message: 'Product created successfully',
@@ -71,6 +74,16 @@ export const productController = {
       });
     } catch (error: any) {
       console.error('❌ Error al crear producto:', error);
+      
+      // Si hay archivos temporales y falló, intentar limpiarlos
+      if (req.files && Array.isArray(req.files)) {
+        try {
+          await StorageService.deleteLocalFiles(req.files as Express.Multer.File[]);
+        } catch (cleanupError) {
+          console.error('Error limpiando archivos temporales:', cleanupError);
+        }
+      }
+      
       const statusCode = error.message.includes('required') ? 400 : 500;
       return res.status(statusCode).json({ message: error.message });
     }
