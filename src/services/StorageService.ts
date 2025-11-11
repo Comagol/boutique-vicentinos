@@ -67,4 +67,15 @@ const uploadPromises = files.map(file => {
       console.error(`Error deleting local file: ${filePath}`, error);
     }
   },
+
+  /** 
+   * Elimina multilpes archivos temporales
+  */
+
+  async deleteLocalFiles(files: Express.Multer.File[]): Promise<void> {
+    const deletePromises = files.map(file => this.deleteLocalFile(file.path));
+    await Promise.all(deletePromises);
+  },
+
+  
 }
