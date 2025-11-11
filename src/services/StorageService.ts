@@ -93,4 +93,25 @@ const uploadPromises = files.map(file => {
     };
     return contentTypes[ext] || 'image/jpeg';
   },
+  
+  /**
+   * Elimina un archivo de Firebase Storage
+   * @param fileUrl - URL pública del archivo en Storage
+   */
+  async deleteFile(fileUrl: string): Promise<void> {
+    try {
+      const bucket = storage.bucket();
+      
+      // Extraer el path del archivo desde la URL
+      // Ejemplo: https://storage.googleapis.com/bucket-name/products/file.jpg
+      // -> products/file.jpg
+      const urlParts = fileUrl.split('/');
+      const filePath = urlParts.slice(-2).join('/'); // products/file.jpg
+      
+      const file = bucket.file(filePath);
+      await file.delete();
+    } catch (error) {
+      throw new Error(`Error deleting file from Firebase Storage: ${error}`);
+    }
+  },
 }
