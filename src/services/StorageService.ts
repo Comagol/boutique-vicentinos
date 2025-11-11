@@ -53,4 +53,18 @@ const uploadPromises = files.map(file => {
   const urls = await Promise.all(uploadPromises);
   return urls;
   },
+
+  /** 
+   * Elimina un archivo temporal de Firebase Storage
+   * @param filePath - Ruta local del archivo temporal
+   */
+  async deleteLocalFile(filePath: string): Promise<void> {
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error(`Error deleting local file: ${filePath}`, error);
+    }
+  },
 }
