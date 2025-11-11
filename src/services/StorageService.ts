@@ -29,8 +29,13 @@ export const StorageService = {
       });
 
       await file.makePublic();
-    } catch (error) {
-      
+
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+      return publicUrl;
+    } catch (error: any) {
+      throw new Error(`Failed to upload file: ${error.message}`);
     }
-  }
+  },
+
+  
 }
