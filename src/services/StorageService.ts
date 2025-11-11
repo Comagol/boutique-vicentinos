@@ -77,5 +77,20 @@ const uploadPromises = files.map(file => {
     await Promise.all(deletePromises);
   },
 
-  
+  /**
+   * Determina el content type basado en la extensión del archivo
+   * @param fileName - Nombre del archivo
+   * @returns Content type MIME
+   */
+  getContentType(fileName: string): string {
+    const ext = path.extname(fileName).toLowerCase();
+    const contentTypes: { [key: string]: string } = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+    };
+    return contentTypes[ext] || 'image/jpeg';
+  },
 }
