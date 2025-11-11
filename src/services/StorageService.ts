@@ -37,5 +37,20 @@ export const StorageService = {
     }
   },
 
-  
+  /**
+   * Sube múltiples archivos y retorna sus URLs
+   * @param files - Array de archivos de Multer
+   * @returns Array de URLs públicas
+   */
+
+  async uploadMultipleFiles(files: Express.Multer.File[]): Promise<string[]> {
+const uploadPromises = files.map(file => {
+  const filePath = file.path;
+  const fileName = file.filename;
+
+  return this.uploadFile(filePath, fileName);
+  });
+  const urls = await Promise.all(uploadPromises);
+  return urls;
+  },
 }
