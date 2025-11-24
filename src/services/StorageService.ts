@@ -1,4 +1,4 @@
-import { storage } from '../config/firebase';
+import { storage, STORAGE_BUCKET_NAME } from '../config/firebase';
 import path from 'path';
 import fs from 'fs';
 
@@ -15,7 +15,13 @@ export const StorageService = {
    */
   async uploadFile(filePath: string, fileName: string): Promise<string> {
     try {
-      const bucket = storage.bucket();
+      const bucket = storage.bucket(STORAGE_BUCKET_NAME);
+      
+      // Verificar que el bucket existe
+      const [exists] = await bucket.exists();
+      if (!exists) {
+        throw new Error(`El bucket de Firebase Storage no existe: ${STORAGE_BUCKET_NAME}. Por favor, créalo en Firebase Console.`);
+      }
 
       const storagePath = `${BUCKET_NAME}/${fileName}`;
       const file = bucket.file(storagePath);
@@ -100,7 +106,7 @@ const uploadPromises = files.map(file => {
    */
   async deleteFile(fileUrl: string): Promise<void> {
     try {
-      const bucket = storage.bucket();
+      const bucket = storage.bucket(STORAGE_BUCKET_NAME);
       
       // Extraer el path del archivo desde la URL
       // Ejemplo: https://storage.googleapis.com/bucket-name/products/file.jpg

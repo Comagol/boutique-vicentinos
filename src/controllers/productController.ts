@@ -66,7 +66,27 @@ export const productController = {
         }
       }
       
-      const product = await ProductService.createProduct(req.body);
+      // Normalizar datos que vienen como strings desde form-data
+      const normalizedData = {
+        ...req.body,
+        // Convertir números
+        price: typeof req.body.price === 'string' ? parseFloat(req.body.price) : req.body.price,
+        discountPrice: req.body.discountPrice 
+          ? (typeof req.body.discountPrice === 'string' ? parseFloat(req.body.discountPrice) : req.body.discountPrice)
+          : undefined,
+        // Convertir booleanos
+        isActive: req.body.isActive !== undefined 
+          ? (typeof req.body.isActive === 'string' 
+              ? req.body.isActive.toLowerCase() === 'true' || req.body.isActive === '1'
+              : Boolean(req.body.isActive))
+          : true, // Por defecto true
+        // Parsear arrays JSON si vienen como strings
+        sizes: typeof req.body.sizes === 'string' ? JSON.parse(req.body.sizes) : req.body.sizes,
+        colors: typeof req.body.colors === 'string' ? JSON.parse(req.body.colors) : req.body.colors,
+        stock: typeof req.body.stock === 'string' ? JSON.parse(req.body.stock) : req.body.stock,
+      };
+      
+      const product = await ProductService.createProduct(normalizedData);
       
       return res.status(201).json({
         message: 'Product created successfully',
