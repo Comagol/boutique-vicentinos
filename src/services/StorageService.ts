@@ -70,7 +70,7 @@ const uploadPromises = files.map(file => {
         fs.unlinkSync(filePath);
       }
     } catch (error) {
-      console.error(`Error deleting local file: ${filePath}`, error);
+      // Error silencioso al eliminar archivo local
     }
   },
 

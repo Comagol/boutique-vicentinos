@@ -258,7 +258,6 @@ export const orderController = {
         const orderId = paymentData.external_reference || paymentData.body?.external_reference;
 
         if (!orderId) {
-          console.error('Webhook: No order ID found in payment');
           return res.status(200).json({ received: true });
         }
 
@@ -267,11 +266,9 @@ export const orderController = {
         if (status === 'approved') {
           // Pago aprobado - confirmar orden
           await OrderService.confirmPayment(orderId, paymentId.toString());
-          console.log(`Payment approved for order ${orderId}`);
         } else if (status === 'rejected' || status === 'cancelled') {
           // Pago rechazado - cancelar orden y devolver stock
           await OrderService.cancelOrder(orderId, 'manually-cancelled');
-          console.log(`Payment rejected/cancelled for order ${orderId}`);
         }
       }
 
@@ -279,7 +276,6 @@ export const orderController = {
       // Si respondes error, Mercado Pago seguirá reenviando la notificación
       return res.status(200).json({ received: true });
     } catch (error: any) {
-      console.error('Webhook error:', error);
       // Aún así responder 200 para evitar reenvíos infinitos
       return res.status(200).json({ received: true });
     }

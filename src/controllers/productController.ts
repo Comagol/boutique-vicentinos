@@ -49,7 +49,6 @@ export const productController = {
         const files = req.files as Express.Multer.File[];
         
         // 1. Subir archivos a Firebase Storage
-        console.log('☁️ Subiendo archivos a Firebase Storage...');
         imageUrls = await StorageService.uploadMultipleFiles(files);
         
         // 2. Eliminar archivos temporales locales
@@ -105,14 +104,12 @@ export const productController = {
         product,
       });
     } catch (error: any) {
-      console.error('❌ Error al crear producto:', error);
-      
       // Si hay archivos temporales y falló, intentar limpiarlos
       if (req.files && Array.isArray(req.files)) {
         try {
           await StorageService.deleteLocalFiles(req.files as Express.Multer.File[]);
         } catch (cleanupError) {
-          console.error('Error limpiando archivos temporales:', cleanupError);
+          // Error silencioso al limpiar archivos temporales
         }
       }
       
@@ -133,7 +130,6 @@ export const productController = {
         const files = req.files as Express.Multer.File[];
         
         // 1. Subir archivos a Firebase Storage
-        console.log('☁️ Subiendo archivos a Firebase Storage...');
         imageUrls = await StorageService.uploadMultipleFiles(files);
         
         // 2. Eliminar archivos temporales locales
@@ -211,14 +207,12 @@ export const productController = {
         product,
       });
     } catch (error: any) {
-      console.error('❌ Error al actualizar producto:', error);
-      
       // Si hay archivos temporales y falló, intentar limpiarlos
       if (req.files && Array.isArray(req.files)) {
         try {
           await StorageService.deleteLocalFiles(req.files as Express.Multer.File[]);
         } catch (cleanupError) {
-          console.error('Error limpiando archivos temporales:', cleanupError);
+          // Error silencioso al limpiar archivos temporales
         }
       }
       
