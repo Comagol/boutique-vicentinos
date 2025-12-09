@@ -12,18 +12,20 @@ const getAccessToken = (): string => {
 
 const getFrontendUrl = (): string => {
   const url = process.env.FRONTEND_URL;
-  if (!url) {
+  if (!url || url.trim() === '') {
     throw new Error('FRONTEND_URL is not set in environment variables');
   }
-  return url;
+  // Asegurar que la URL no termine con /
+  return url.trim().replace(/\/$/, '');
 };
 
 const getApiUrl = (): string => {
   const url = process.env.API_URL;
-  if (!url) {
+  if (!url || url.trim() === '') {
     throw new Error('API_URL is not set in environment variables');
   }
-  return url;
+  // Asegurar que la URL no termine con /
+  return url.trim().replace(/\/$/, '');
 };
 
 // Detectar modo test/producción basado en el access token
@@ -33,17 +35,36 @@ const isTestMode = (): boolean => {
   return token.includes('TEST') || token.toLowerCase().includes('test');
 };
 
-// Configurar cliente Mercado Pago
-const client = new MercadoPagoConfig({
-  accessToken: getAccessToken(),
-  options: {
-    timeout: 10000, // Aumentado a 10 segundos para mejor confiabilidad
-  },
-});
+// Inicialización lazy del cliente de Mercado Pago
+let client: MercadoPagoConfig | null = null;
+let preference: Preference | null = null;
+let paymentClient: Payment | null = null;
 
-// Crear instancias de los recursos
-const preference = new Preference(client);
-const paymentClient = new Payment(client);
+const getClient = (): MercadoPagoConfig => {
+  if (!client) {
+    client = new MercadoPagoConfig({
+      accessToken: getAccessToken(),
+      options: {
+        timeout: 10000, // Aumentado a 10 segundos para mejor confiabilidad
+      },
+    });
+  }
+  return client;
+};
+
+const getPreference = (): Preference => {
+  if (!preference) {
+    preference = new Preference(getClient());
+  }
+  return preference;
+};
+
+const getPaymentClient = (): Payment => {
+  if (!paymentClient) {
+    paymentClient = new Payment(getClient());
+  }
+  return paymentClient;
+};
 
 export const PaymentService = {
   /**
@@ -98,27 +119,109 @@ export const PaymentService = {
         );
       }
 
-      // Crear la preferencia de pago
-      const preferenceData = {
-        items,
-        external_reference: order.id,
+      // Obtener URLs y validarlas
+      const frontendUrl = getFrontendUrl();
+      const apiUrl = getApiUrl();
+      
+      // Validar que las URLs sean válidas
+      if (!frontendUrl || frontendUrl.trim() === '') {
+        throw new Error('FRONTEND_URL is empty or invalid');
+      }
+      
+      if (!apiUrl || apiUrl.trim() === '') {
+        throw new Error('API_URL is empty or invalid');
+      }
+
+      // Validar que las URLs tengan protocolo válido
+      const isValidUrl = (url: string): boolean => {
+        try {
+          const urlObj = new URL(url);
+          return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+        } catch {
+          return false;
+        }
+      };
+
+      if (!isValidUrl(frontendUrl)) {
+        throw new Error(`FRONTEND_URL is not a valid URL: ${frontendUrl}`);
+      }
+
+      if (!isValidUrl(apiUrl)) {
+        throw new Error(`API_URL is not a valid URL: ${apiUrl}`);
+      }
+
+      // Construir URLs de retorno (asegurar que no haya doble slash)
+      const baseFrontendUrl = frontendUrl.replace(/\/$/, '');
+      const baseApiUrl = apiUrl.replace(/\/$/, '');
+      
+      const successUrl = `${baseFrontendUrl}/order/${order.id}?status=success`;
+      const failureUrl = `${baseFrontendUrl}/order/${order.id}?status=failure`;
+      const pendingUrl = `${baseFrontendUrl}/order/${order.id}?status=pending`;
+      const webhookUrl = `${baseApiUrl}/api/payments/webhook`;
+
+      // Validar que todas las URLs estén definidas y sean válidas
+      if (!successUrl || !failureUrl || !pendingUrl || !webhookUrl) {
+        throw new Error('One or more URLs are undefined');
+      }
+
+      if (!isValidUrl(successUrl) || !isValidUrl(failureUrl) || !isValidUrl(pendingUrl) || !isValidUrl(webhookUrl)) {
+        throw new Error(`Invalid URLs - success: ${successUrl}, failure: ${failureUrl}, pending: ${pendingUrl}, webhook: ${webhookUrl}`);
+      }
+
+      // Asegurar que todas las URLs sean strings válidos
+      const backUrls = {
+        success: String(successUrl).trim(),
+        failure: String(failureUrl).trim(),
+        pending: String(pendingUrl).trim(),
+      };
+
+      // Validar que todas las URLs estén definidas y sean válidas
+      if (!backUrls.success || !backUrls.failure || !backUrls.pending) {
+        throw new Error(
+          `Invalid back_urls - success: ${backUrls.success}, ` +
+          `failure: ${backUrls.failure}, ` +
+          `pending: ${backUrls.pending}`
+        );
+      }
+
+      // Crear la preferencia de pago con estructura explícita
+      // Nota: Mercado Pago SDK v2 puede tener problemas con auto_return y back_urls
+      // Vamos a construir el objeto de manera más explícita
+      const preferenceData: any = {
+        items: items.map(item => ({
+          id: String(item.id),
+          title: String(item.title),
+          description: String(item.description),
+          quantity: Number(item.quantity),
+          unit_price: Number(item.unit_price),
+        })),
+        external_reference: String(order.id),
         back_urls: {
-          success: `${getFrontendUrl()}/order/${order.id}?status=success`,
-          failure: `${getFrontendUrl()}/order/${order.id}?status=failure`,
-          pending: `${getFrontendUrl()}/order/${order.id}?status=pending`,
+          success: String(backUrls.success),
+          failure: String(backUrls.failure),
+          pending: String(backUrls.pending),
         },
-        auto_return: 'approved' as const,
-        notification_url: `${getApiUrl()}/api/payments/webhook`,
-        statement_descriptor: 'BOUTIQUE VICENTINOS', // Aparece en el resumen de tarjeta
+        notification_url: String(webhookUrl).trim(),
+        statement_descriptor: 'BOUTIQUE VICENTINOS',
         expires: true,
         expiration_date_from: new Date().toISOString(),
         expiration_date_to: order.expiresAt 
           ? new Date(order.expiresAt).toISOString() 
-          : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 días por defecto
+          : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
       };
 
+      // Intentar sin auto_return primero para ver si ese es el problema
+      // Si funciona, luego podemos agregarlo de vuelta
+      // preferenceData.auto_return = 'approved';
+
+      // Debug: Verificar qué se está enviando (temporal para debugging)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Preference data being sent:', JSON.stringify(preferenceData, null, 2));
+        console.log('Back URLs:', JSON.stringify(backUrls, null, 2));
+      }
+
       // Crear la preferencia en Mercado Pago
-      const response = await preference.create({ body: preferenceData });
+      const response = await getPreference().create({ body: preferenceData });
 
       if (!response.init_point) {
         throw new Error('Mercado Pago did not return a payment URL');
@@ -129,13 +232,38 @@ export const PaymentService = {
         preferenceId: response.id || '',
       };
     } catch (error: any) {
-      // Mejorar mensaje de error
-      if (error.response?.data) {
-        throw new Error(
-          `Failed to create payment preference: ${JSON.stringify(error.response.data)}`
-        );
+      // Log completo del error en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.error('=== MERCADO PAGO ERROR ===');
+        console.error('Error completo:', error);
+        console.error('Error response data:', JSON.stringify(error.response?.data, null, 2));
+        console.error('Error status:', error.response?.status);
+        console.error('Error status text:', error.response?.statusText);
+        console.error('========================');
       }
-      throw new Error(`Failed to create payment preference: ${error.message}`);
+      
+      // Mejorar mensaje de error con más detalles
+      let errorMessage = 'Failed to create payment preference';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        // Mercado Pago puede devolver errores en diferentes formatos
+        if (errorData.message) {
+          errorMessage = `Failed to create payment preference: ${errorData.message}`;
+        } else if (errorData.cause && Array.isArray(errorData.cause)) {
+          // Errores de validación de Mercado Pago
+          const validationErrors = errorData.cause.map((err: any) => 
+            `${err.code || ''} ${err.message || ''}`.trim()
+          ).join(', ');
+          errorMessage = `Failed to create payment preference: ${validationErrors || JSON.stringify(errorData)}`;
+        } else {
+          errorMessage = `Failed to create payment preference: ${JSON.stringify(errorData)}`;
+        }
+      } else if (error.message) {
+        errorMessage = `Failed to create payment preference: ${error.message}`;
+      }
+      
+      throw new Error(errorMessage);
     }
   },
 
@@ -150,7 +278,7 @@ export const PaymentService = {
         throw new Error('Payment ID is required');
       }
 
-      const paymentData = await paymentClient.get({ id: paymentId });
+      const paymentData = await getPaymentClient().get({ id: paymentId });
       return paymentData;
     } catch (error: any) {
       if (error.response?.data) {
