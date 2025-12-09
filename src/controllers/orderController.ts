@@ -51,12 +51,19 @@ export const orderController = {
 
       if (paymentMethod === 'mercadopago') {
         try {
-          const paymentUrl = await PaymentService.createPaymentPreference(order);
+          const { paymentUrl, preferenceId } = await PaymentService.createPaymentPreference(order);
+          
+          // Actualizar la orden con el preferenceId si es necesario
+          // (esto se puede hacer después si queremos guardarlo en la BD)
           
           return res.status(201).json({
             message: 'Order created successfully',
-            order,
+            order: {
+              ...order,
+              preferenceId, // ID de la preferencia de Mercado Pago
+            },
             paymentUrl, // URL para que el cliente redirija y pague
+            preferenceId, // ID de la preferencia para referencia futura
           });
         } catch (paymentError: any) {
           // Si falla crear la preferencia, aún así retornamos la orden
@@ -249,27 +256,49 @@ export const orderController = {
     try {
       const { type, data } = req.body;
 
+      // Mercado Pago puede enviar diferentes tipos de notificaciones
       if (type === 'payment') {
-        const paymentId = data.id;
+        const paymentId = data?.id;
 
-        // Obtener información completa del pago
-        const paymentData = await PaymentService.verifyPayment(paymentId.toString());
-
-        const orderId = paymentData.external_reference || paymentData.body?.external_reference;
-
-        if (!orderId) {
-          return res.status(200).json({ received: true });
+        if (!paymentId) {
+          // Si no hay paymentId, responder OK pero no procesar
+          return res.status(200).json({ received: true, message: 'No payment ID provided' });
         }
 
-        // Verificar estado del pago
-        const status = paymentData.status || paymentData.body?.status;
-        if (status === 'approved') {
-          // Pago aprobado - confirmar orden
-          await OrderService.confirmPayment(orderId, paymentId.toString());
-        } else if (status === 'rejected' || status === 'cancelled') {
-          // Pago rechazado - cancelar orden y devolver stock
-          await OrderService.cancelOrder(orderId, 'manually-cancelled');
+        try {
+          // Obtener información completa del pago usando el nuevo método
+          const paymentInfo = await PaymentService.getPaymentInfo(paymentId.toString());
+
+          const orderId = paymentInfo.externalReference;
+
+          if (!orderId) {
+            // Si no hay orderId, responder OK pero no procesar
+            return res.status(200).json({ received: true, message: 'No order ID found in payment' });
+          }
+
+          // Procesar según el estado del pago
+          const status = paymentInfo.status;
+
+          if (status === 'approved') {
+            // Pago aprobado - confirmar orden
+            await OrderService.confirmPayment(orderId, paymentId.toString(), 'approved');
+          } else if (status === 'rejected' || status === 'cancelled') {
+            // Pago rechazado o cancelado - cancelar orden y devolver stock
+            await OrderService.cancelOrder(orderId, 'manually-cancelled');
+          }
+          // Si el estado es 'pending', no hacemos nada (la orden ya está en pending-payment)
+        } catch (paymentError: any) {
+          // Si hay error al obtener el pago, responder OK para evitar reenvíos
+          // pero no procesar la notificación
+          return res.status(200).json({ 
+            received: true, 
+            error: `Failed to process payment: ${paymentError.message}` 
+          });
         }
+      } else if (type === 'merchant_order') {
+        // Mercado Pago también puede enviar notificaciones de merchant_order
+        // Por ahora solo respondemos OK, pero se puede implementar lógica adicional
+        return res.status(200).json({ received: true, message: 'Merchant order notification received' });
       }
 
       // Siempre responder 200 a Mercado Pago (importante)
@@ -277,7 +306,61 @@ export const orderController = {
       return res.status(200).json({ received: true });
     } catch (error: any) {
       // Aún así responder 200 para evitar reenvíos infinitos
-      return res.status(200).json({ received: true });
+      return res.status(200).json({ received: true, error: 'Webhook processing error' });
+    }
+  },
+
+  // GET - Obtener estado de pago de una orden (público)
+  async getPaymentStatus(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params;
+
+      if (!orderId) {
+        return res.status(400).json({
+          error: 'Order ID is required'
+        });
+      }
+
+      // Obtener la orden
+      const order = await OrderService.getOrderById(orderId);
+
+      if (!order.paymentId) {
+        return res.status(200).json({
+          orderId: order.id,
+          paymentStatus: 'no-payment',
+          message: 'No payment has been processed for this order',
+        });
+      }
+
+      try {
+        // Obtener información actualizada del pago desde Mercado Pago
+        const paymentInfo = await PaymentService.getPaymentInfo(order.paymentId);
+
+        return res.status(200).json({
+          orderId: order.id,
+          orderStatus: order.status,
+          paymentId: paymentInfo.id,
+          paymentStatus: paymentInfo.status,
+          paymentStatusDetail: paymentInfo.statusDetail,
+          transactionAmount: paymentInfo.transactionAmount,
+          dateCreated: paymentInfo.dateCreated,
+          dateApproved: paymentInfo.dateApproved,
+        });
+      } catch (paymentError: any) {
+        // Si hay error al obtener el pago, retornar información de la orden
+        return res.status(200).json({
+          orderId: order.id,
+          orderStatus: order.status,
+          paymentId: order.paymentId,
+          paymentStatus: order.paymentStatus || 'unknown',
+          error: `Could not fetch updated payment status: ${paymentError.message}`,
+        });
+      }
+    } catch (error: any) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      return res.status(statusCode).json({ 
+        error: error.message 
+      });
     }
   }
 }

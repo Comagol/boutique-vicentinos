@@ -120,14 +120,14 @@ export const OrderService = {
   },
 
   //corfirmo el pago
-  async confirmPayment(orderId: string, paymentId: string): Promise<Order> {
+  async confirmPayment(orderId: string, paymentId: string, paymentStatus: string = 'approved'): Promise<Order> {
     const order = await this.getOrderById(orderId);
 
     if (order.status !== 'pending-payment') {
       throw new Error(`Order ${orderId} is not pending payment`);
     }
 
-    return await OrderModel.confirmPayment(orderId, paymentId);
+    return await OrderModel.confirmPayment(orderId, paymentId, paymentStatus);
   },
 
   //cancelar orden y devolver stock

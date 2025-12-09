@@ -17,6 +17,9 @@ router.post('/cancel', orderController.cancelOrder);
 //Post /api/orders/confirm-payment confirmar pago (public)
 router.post('/confirm-payment', orderController.confirmPayment);
 
+//Get /api/orders/:orderId/payment-status obtener estado de pago de una orden (public)
+router.get('/:orderId/payment-status', orderController.getPaymentStatus);
+
 // ======== PRIVATE ROUTES ==========
 router.use(authenticate, requireAdmin);
 

@@ -13,6 +13,9 @@ const firestoreToOrder = (data: any, id: string): Order => ({
   total: data.total,
   paymentMethod: data.paymentMethod,
   paymentId: data.paymentId,
+  preferenceId: data.preferenceId,
+  paymentStatus: data.paymentStatus,
+  paymentDate: data.paymentDate?.toDate(),
   createdAt: data.createdAt?.toDate() || new Date(),
   updatedAt: data.updatedAt?.toDate() || new Date(),
   expiresAt: data.expiresAt?.toDate(),
@@ -119,11 +122,13 @@ export const OrderModel = {
   },
 
   // CONFIRMAR PAGO
-  async confirmPayment(id: string, paymentId: string): Promise<Order> {
+  async confirmPayment(id: string, paymentId: string, paymentStatus: string = 'approved'): Promise<Order> {
     try {
       await db.collection(COLLECTION_NAME).doc(id).update({
         status: 'payment-confirmed',
         paymentId,
+        paymentStatus,
+        paymentDate: new Date(),
         updatedAt: new Date(),
       });
       return (await this.getById(id))!;

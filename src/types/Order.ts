@@ -21,6 +21,12 @@ export interface OrderItem {
   reservedStock: boolean;
 }
 
+export type PaymentStatus = 
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled';
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -29,7 +35,10 @@ export interface Order {
   status: OrderStatus;
   total: number;
   paymentMethod: string;
-  paymentId?: string;
+  paymentId?: string; // ID del pago en Mercado Pago
+  preferenceId?: string; // ID de la preferencia de Mercado Pago
+  paymentStatus?: PaymentStatus; // Estado del pago en Mercado Pago
+  paymentDate?: Date; // Fecha en que se procesó el pago
   createdAt: Date;
   updatedAt: Date;
   expiresAt?: Date;
