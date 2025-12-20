@@ -74,6 +74,22 @@ export const OrderModel = {
     }
   },
 
+  //Obtener por preferenceId de Mercado Pago
+  async getByPreferenceId(preferenceId: string): Promise<Order | null> {
+    try {
+      const snapshot = await db.collection(COLLECTION_NAME)
+        .where('preferenceId', '==', preferenceId)
+        .limit(1)
+        .get();
+      
+      if (snapshot.empty) return null;
+      const doc = snapshot.docs[0]!;
+      return firestoreToOrder(doc.data(), doc.id);
+    } catch (error) {
+      throw new Error(`Error getting order by preferenceId: ${error}`);
+    }
+  },
+
   //listar todas las ordenes con filtros opcionales
   async getAll(filters?: {status?: OrderStatus; customerEmail?: string; customerName?: string}): Promise<Order[]> {
     try {

@@ -154,9 +154,11 @@ export const PaymentService = {
       const baseFrontendUrl = frontendUrl.replace(/\/$/, '');
       const baseApiUrl = apiUrl.replace(/\/$/, '');
       
-      const successUrl = `${baseFrontendUrl}/order/${order.id}?status=success`;
-      const failureUrl = `${baseFrontendUrl}/order/${order.id}?status=failure`;
-      const pendingUrl = `${baseFrontendUrl}/order/${order.id}?status=pending`;
+      // Las URLs de retorno apuntan al backend para procesar el pago antes de redirigir al frontend
+      // Esto asegura que el estado se actualice inmediatamente, especialmente importante en modo test
+      const successUrl = `${baseApiUrl}/api/payments/return`;
+      const failureUrl = `${baseApiUrl}/api/payments/return`;
+      const pendingUrl = `${baseApiUrl}/api/payments/return`;
       const webhookUrl = `${baseApiUrl}/api/payments/webhook`;
 
       // Validar que todas las URLs estén definidas y sean válidas
@@ -210,15 +212,24 @@ export const PaymentService = {
           : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
       };
 
+      // Agregar información del payer si está disponible
+      // Esto ayuda a evitar la validación de email en usuarios de test
+      // Nota: Si aún se requiere validación de email con usuarios de test,
+      // usar los últimos 6 dígitos del User ID o Access Token como código de verificación
+      if (order.customer && order.customer.email) {
+        preferenceData.payer = {
+          email: order.customer.email,
+          name: order.customer.name || undefined,
+          phone: order.customer.phone ? {
+            area_code: order.customer.phone.replace(/\D/g, '').substring(0, 2) || undefined,
+            number: order.customer.phone.replace(/\D/g, '').substring(2) || undefined,
+          } : undefined,
+        };
+      }
+
       // Intentar sin auto_return primero para ver si ese es el problema
       // Si funciona, luego podemos agregarlo de vuelta
       // preferenceData.auto_return = 'approved';
-
-      // Debug: Verificar qué se está enviando (temporal para debugging)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Preference data being sent:', JSON.stringify(preferenceData, null, 2));
-        console.log('Back URLs:', JSON.stringify(backUrls, null, 2));
-      }
 
       // Crear la preferencia en Mercado Pago
       const response = await getPreference().create({ body: preferenceData });
@@ -232,15 +243,6 @@ export const PaymentService = {
         preferenceId: response.id || '',
       };
     } catch (error: any) {
-      // Log completo del error en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        console.error('=== MERCADO PAGO ERROR ===');
-        console.error('Error completo:', error);
-        console.error('Error response data:', JSON.stringify(error.response?.data, null, 2));
-        console.error('Error status:', error.response?.status);
-        console.error('Error status text:', error.response?.statusText);
-        console.error('========================');
-      }
       
       // Mejorar mensaje de error con más detalles
       let errorMessage = 'Failed to create payment preference';

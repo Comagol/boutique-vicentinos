@@ -310,6 +310,117 @@ export const orderController = {
     }
   },
 
+  // GET/POST - Procesar retorno desde Mercado Pago y verificar estado del pago
+  async handlePaymentReturn(req: Request, res: Response) {
+    try {
+      // Mercado Pago puede enviar payment_id, collection_id, status, preference_id
+      // Puede venir en query params (GET) o en body (POST)
+      const queryParams = req.query || {};
+      const bodyParams = req.body || {};
+      
+      // Combinar query params y body params (body tiene prioridad)
+      const params = { ...queryParams, ...bodyParams };
+      
+      const { payment_id, collection_id, status, preference_id } = params;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const baseFrontendUrl = frontendUrl.replace(/\/$/, '');
+
+      // Determinar el ID del pago (payment_id o collection_id son equivalentes)
+      const paymentId = (payment_id || collection_id)?.toString();
+
+      if (!paymentId && !preference_id) {
+        // Si no hay información del pago, redirigir al frontend con error
+        return res.redirect(`${baseFrontendUrl}/order/error?message=No payment information provided`);
+      }
+
+      try {
+        let orderId: string | undefined;
+        let paymentStatus: string | undefined;
+
+        if (paymentId) {
+          // Si tenemos el payment_id, obtener información del pago directamente
+          const paymentInfo = await PaymentService.getPaymentInfo(paymentId);
+          
+          orderId = paymentInfo.externalReference;
+          paymentStatus = paymentInfo.status;
+
+          // Actualizar el estado de la orden según el estado del pago
+          if (orderId) {
+            if (paymentStatus === 'approved') {
+              // Verificar que la orden aún esté pendiente antes de confirmar
+              try {
+                const order = await OrderService.getOrderById(orderId);
+                
+                if (order.status === 'pending-payment') {
+                  await OrderService.confirmPayment(orderId, paymentId, 'approved');
+                }
+              } catch (orderError: any) {
+                // Si la orden ya fue procesada, continuar con la redirección
+              }
+            } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
+              // Cancelar orden si el pago fue rechazado
+              try {
+                const order = await OrderService.getOrderById(orderId);
+                if (order.status === 'pending-payment') {
+                  await OrderService.cancelOrder(orderId, 'manually-cancelled');
+                }
+              } catch (orderError: any) {
+                // Continuar con la redirección aunque haya error
+              }
+            }
+          }
+        } else if (preference_id) {
+          // Si solo tenemos preference_id, buscar la orden por preferenceId
+          try {
+            const order = await OrderService.getOrderByPreferenceId(preference_id.toString());
+            orderId = order.id;
+            
+            // Si la orden ya tiene paymentId, verificar su estado
+            if (order.paymentId) {
+              const paymentInfo = await PaymentService.getPaymentInfo(order.paymentId);
+              paymentStatus = paymentInfo.status;
+              
+              // Actualizar estado si es necesario
+              if (paymentStatus === 'approved' && order.status === 'pending-payment') {
+                await OrderService.confirmPayment(orderId, order.paymentId, 'approved');
+              }
+            } else {
+              // Si no hay paymentId aún, el pago puede estar pendiente
+              paymentStatus = 'pending';
+            }
+          } catch (prefError: any) {
+            return res.redirect(`${baseFrontendUrl}/order/error?message=Order not found for preference`);
+          }
+        }
+
+        // Redirigir al frontend según el estado
+        if (!orderId) {
+          return res.redirect(`${baseFrontendUrl}/order/error?message=Order not found`);
+        }
+
+        // Determinar la URL de redirección según el estado
+        let redirectUrl: string;
+        if (paymentStatus === 'approved') {
+          redirectUrl = `${baseFrontendUrl}/order/${orderId}?status=success`;
+        } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
+          redirectUrl = `${baseFrontendUrl}/order/${orderId}?status=failure`;
+        } else {
+          // Estado pending u otro
+          redirectUrl = `${baseFrontendUrl}/order/${orderId}?status=pending`;
+        }
+        
+        return res.redirect(redirectUrl);
+      } catch (paymentError: any) {
+        // Si hay error al obtener el pago, redirigir con error
+        return res.redirect(`${baseFrontendUrl}/order/error?message=Error processing payment`);
+      }
+    } catch (error: any) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const baseFrontendUrl = frontendUrl.replace(/\/$/, '');
+      return res.redirect(`${baseFrontendUrl}/order/error?message=Unexpected error`);
+    }
+  },
+
   // GET - Obtener estado de pago de una orden (público)
   async getPaymentStatus(req: Request, res: Response) {
     try {

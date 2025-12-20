@@ -394,6 +394,57 @@ Si estás usando credenciales de test (`TEST-...`), puedes usar estas tarjetas d
 
 Más tarjetas de prueba: https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/testing
 
+### 👤 Usuarios de Prueba (Test Users)
+
+Para probar el flujo completo de pago, Mercado Pago requiere que uses **usuarios de prueba**. Estos usuarios simulan compradores reales.
+
+#### Crear Usuario de Prueba
+
+1. Ve a tu panel de Mercado Pago: https://www.mercadopago.com.ar/developers/panel/app
+2. Selecciona tu aplicación de prueba
+3. Ve a la sección **"Usuarios de prueba"** o **"Test Users"**
+4. Crea un nuevo usuario de prueba (buyer/test user)
+
+#### Código de Verificación por Email
+
+Cuando intentas pagar con un usuario de prueba, Mercado Pago puede pedirte un **código de verificación** que se envía por email.
+
+**¿Dónde encontrar el código?**
+
+1. **Email del usuario de prueba**: El código se envía al email que configuraste para el usuario de prueba (ej: `test_user_1920172413@testuser.com`)
+
+2. **Panel de Mercado Pago**: 
+   - Ve a tu panel de desarrolladores
+   - Selecciona tu aplicación
+   - Ve a **"Usuarios de prueba"**
+   - Haz clic en el usuario que estás usando
+   - Busca la sección **"Códigos de verificación"** o **"Verification Codes"**
+
+3. **Código de prueba estándar**: En algunos casos, Mercado Pago usa códigos predefinidos para usuarios de prueba:
+   - Código común: `123456`
+   - O el código que aparece en el panel de usuarios de prueba
+
+#### Pasos para Completar un Pago de Prueba
+
+1. **Crear la orden** desde tu frontend (POST `/api/orders`)
+2. **Redirigir al usuario** a la `paymentUrl` recibida
+3. **En la página de Mercado Pago**:
+   - Selecciona "Pagar con cuenta de Mercado Pago" o "Pagar con tarjeta"
+   - Si te pide iniciar sesión, usa las credenciales del usuario de prueba
+   - Si te pide código de verificación:
+     - Revisa el email del usuario de prueba
+     - O usa el código del panel de desarrolladores
+     - O intenta con `123456` (código común de prueba)
+4. **Completar el pago** con una tarjeta de prueba (ver arriba)
+
+#### Usuarios de Prueba Predefinidos
+
+Mercado Pago también proporciona usuarios de prueba predefinidos. Puedes encontrarlos en:
+- Documentación: https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/testing
+- Panel de desarrolladores → Usuarios de prueba
+
+**Nota importante**: Los usuarios de prueba solo funcionan con credenciales de test (`TEST-...`). No funcionan con credenciales de producción.
+
 ---
 
 ## 📞 Soporte

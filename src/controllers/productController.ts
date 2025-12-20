@@ -104,17 +104,6 @@ export const productController = {
         product,
       });
     } catch (error: any) {
-      // Log del error en desarrollo para debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.error('=== ERROR CREATING PRODUCT ===');
-        console.error('Error:', error);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        console.error('Request body:', req.body);
-        console.error('Request files:', req.files);
-        console.error('=============================');
-      }
-      
       // Si hay archivos temporales y falló, intentar limpiarlos
       if (req.files && Array.isArray(req.files)) {
         try {

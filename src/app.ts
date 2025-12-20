@@ -58,9 +58,6 @@ app.use('/api', router);
 
 // Manejo de errores (debe ir ANTES de las rutas 404)
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error capturado:', err);
-  console.error('Stack:', err.stack);
-  
   // Errores de Multer
   if (err.name === 'MulterError') {
     if (err.message === 'File too large') {
@@ -90,6 +87,5 @@ app.use((req: Request, res: Response) => {
 const PORT = process.env.PORT || 3000;
 // Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+  // Servidor iniciado
 });

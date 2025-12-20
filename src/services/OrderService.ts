@@ -220,6 +220,15 @@ export const OrderService = {
     return order;
   },
 
+  //obtengo orden por preferenceId
+  async getOrderByPreferenceId(preferenceId: string): Promise<Order> {
+    const order = await OrderModel.getByPreferenceId(preferenceId);
+    if(!order) {
+      throw new Error(`Order with preferenceId ${preferenceId} not found`);
+    }
+    return order;
+  },
+
   //obtengo todas las ordenes
   async getAllOrders(filters?: {
     status?: OrderStatus;
