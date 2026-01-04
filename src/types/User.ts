@@ -17,7 +17,7 @@ export interface AdminUser {
 export interface JwtPayload {
   id: string;
   email: string;
-  role: CustomerRole;
+  role: UserRole;
 }
 
 export interface CustomerUser {
