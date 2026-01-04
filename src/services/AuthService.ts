@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { AdminModel } from '../models/Admin';
-import { AdminUser, JwtPayload } from '../types/User';
-import { jwtConfig, getJwtSecret } from '../config/jwt';
+import { JwtPayload } from '../types/User';
+import { getJwtSecret } from '../config/jwt';
 import { authConfig, bcryptConfig } from '../config/auth';
 
 export const AuthService = {
