@@ -1,4 +1,6 @@
 export type AdminRole = 'admin';
+export type CustomerRole = 'customer';
+export type UserRole = AdminRole | CustomerRole;
 
 export interface AdminUser {
   id: string;
@@ -15,5 +17,17 @@ export interface AdminUser {
 export interface JwtPayload {
   id: string;
   email: string;
-  role: AdminRole;
+  role: CustomerRole;
+}
+
+export interface CustomerUser {
+  id: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+  role: CustomerRole;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLoginAt?: Date;
+  isActive: boolean;
 }
