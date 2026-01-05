@@ -56,3 +56,21 @@ export const requireAdmin = (
   }
   next();
 }
+
+//middleware para verificar el rol de customer
+export const requireCustomer = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) : void =>{
+  if(!req.user) {
+    res.status(401).json({error: 'Authentication required'});
+    return;
+  }
+
+  if(req.user.role !== 'customer') {
+    res.status(403).json({error: 'Forbidden'});
+    return;
+  }
+  next();
+}
