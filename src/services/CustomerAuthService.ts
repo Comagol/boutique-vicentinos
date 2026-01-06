@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { CustomerModel } from '../models/Customer';
 import { AdminModel } from '../models/Admin';
-import { JwtPayload } from '../types/User';
+import { CustomerUser, JwtPayload } from '../types/User';
 import { getJwtSecret } from '../config/jwt';
 import { authConfig, bcryptConfig } from '../config/auth';
 
@@ -99,4 +99,24 @@ export const CustomerAuthService = {
       throw new Error(`Password must be at least ${authConfig.password.minLength} characters long`);
     }
   },
+
+  //obtener perfil de customer
+  async getProfile(customerId: string) {
+    const customer = await CustomerModel.getById(customerId);
+    if(!customer) {
+      throw new Error('Customer not found');
+    }
+    return customer;
+  },
+
+  //actualizar perfil de customer
+  async updateProfile(customerId: string, updates: Partial<CustomerUser>) {
+    const customer = await CustomerModel.getById(customerId);
+    if(!customer) {
+      throw new Error('Customer not found');
+    }
+    await CustomerModel.update(customerId, updates);
+    return (await this.getProfile(customerId))!;
+    return customer;
+  }
 }

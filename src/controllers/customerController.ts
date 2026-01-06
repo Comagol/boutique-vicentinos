@@ -93,5 +93,22 @@ export const customerController = {
     } catch (error: any) {
       return res.status(500).json({ error: 'Internal server error', message: error.message });
     }
+  },
+
+  //Get Profile (GET /api/customers/profile)
+  async getProfile(req: AuthenticatedRequest, res: Response) {
+    try {
+      if(!req.user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const customer = await CustomerAuthService.getProfile(req.user.id);
+      return res.status(200).json({
+        message: 'Profile fetched successfully',
+        customer: customer,
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: 'Internal server error', message: error.message });
+    }
   }
 }
