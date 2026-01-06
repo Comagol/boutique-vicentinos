@@ -66,7 +66,7 @@ export const OrderService = {
     });
 
     //genero un numero de orden unico
-    const orderNumber = await this.generateOrderNumber();
+    const orderNumber = `${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
 
     //calculo la fecha de expiracion de la reserva
     const expiresAt = new Date();
@@ -96,7 +96,7 @@ export const OrderService = {
     //creo la orden
     const orderRef = db.collection('orders').doc();
     const orderData = {
-      orderNumber,
+      orderNumber: orderNumber.toString(),
       customer,
       items: orderItems,
       status: 'pending-payment' as OrderStatus,
@@ -237,17 +237,9 @@ export const OrderService = {
     return await OrderModel.getAll(filters);
   },
 
-  //generar numero de orden unico
-  async generateOrderNumber(): Promise<string> {
-    const year = new Date().getFullYear();
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    const orderNumber = `${year}-${random}`;
-
-    const existing = await OrderModel.getByOrderNumber(orderNumber);
-    if(existing) {
-      return this.generateOrderNumber();
-    }
-    return orderNumber;
+  //obtener ordenes por customer ID
+  async getOrdersByCustomerEmail(customerEmail: string): Promise<Order[]> {
+    return await OrderModel.getAll({ customerEmail });
   },
 
   //verifico ordenes proximas a expirar

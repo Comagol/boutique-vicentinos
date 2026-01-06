@@ -3,6 +3,7 @@ import { CustomerAuthService } from '../services/CustomerAuthService';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { error } from 'console';
 import { authConfig } from '../config/auth';
+import { OrderService } from '../services/OrderService';
 
 export const customerController = {
   //Signup (crear customer)
@@ -77,6 +78,20 @@ export const customerController = {
         error: 'Internal server error',
         message: error.message,
       });
+    }
+  },
+
+  //Get Orders (GET /api/customers/orders)
+  async getOrders(req: AuthenticatedRequest, res: Response) {
+    try {
+      if(!req.user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const orders = await OrderService.getOrdersByCustomerEmail(req.user.email);
+      return res.status(200).json(orders);
+    } catch (error: any) {
+      return res.status(500).json({ error: 'Internal server error', message: error.message });
     }
   }
 }
