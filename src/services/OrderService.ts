@@ -19,6 +19,7 @@ export const OrderService = {
       quantity: number;
     }>,
     paymentMethod: string,
+    customerId?: string, // ID del cliente en la base de datos (opcional)
   ): Promise<Order> {
     //validar si el stock esta disponible
     const productData: Product[] = [];
@@ -95,7 +96,7 @@ export const OrderService = {
 
     //creo la orden
     const orderRef = db.collection('orders').doc();
-    const orderData = {
+    const orderData: any = {
       orderNumber: orderNumber.toString(),
       customer,
       items: orderItems,
@@ -106,6 +107,12 @@ export const OrderService = {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    
+    // Solo agregar customerId si está definido
+    if (customerId) {
+      orderData.customerId = customerId;
+    }
+    
     batch.set(orderRef, orderData);
 
     //ejecuto todas las operaciones juntas con batch
@@ -113,10 +120,25 @@ export const OrderService = {
 
     //retorno la orden creada
     const doc = await orderRef.get();
-    return {
+    const orderResult: Order = {
       id: doc.id,
-      ...orderData,
+      orderNumber: orderData.orderNumber,
+      customer: orderData.customer,
+      items: orderData.items,
+      status: orderData.status,
+      total: orderData.total,
+      paymentMethod: orderData.paymentMethod,
+      expiresAt: orderData.expiresAt,
+      createdAt: orderData.createdAt,
+      updatedAt: orderData.updatedAt,
     };
+    
+    // Solo agregar customerId si existe
+    if (customerId) {
+      orderResult.customerId = customerId;
+    }
+    
+    return orderResult;
   },
 
   //corfirmo el pago
