@@ -3,6 +3,8 @@ import { CustomerAuthService } from '../services/CustomerAuthService';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { authConfig } from '../config/auth';
 import { OrderService } from '../services/OrderService';
+import { AdminModel } from '../models/Admin';
+import { CustomerModel } from '../models/Customer';
 
 export const customerController = {
   //Signup (crear customer)
@@ -14,6 +16,15 @@ export const customerController = {
         return res.status(400).json({ error: 'Email, password and name are required' });
       }
 
+      if(password.length < authConfig.password.minLength) {
+        return res.status(400).json({ error: `Password must be at least ${authConfig.password.minLength} characters long` });
+      }
+
+      const existing = await CustomerModel.getByEmail(email) || await AdminModel.getByEmail(email);
+      if(existing) {
+        return res.status(409).json({ error: 'Email already registered' });
+      }
+
       const result = await CustomerAuthService.signup(email, password, name);
       return res.status(201).json({
         message: 'Customer created successfully',
@@ -21,10 +32,7 @@ export const customerController = {
         token: result.token,
       });
     } catch (error: any) {
-      return res.status(500).json({
-        error: 'Internal server error',
-        message: error.message,
-      });
+      return res.status(500).json({ error: 'Internal server error', message: error.message });
     }
 
   },
@@ -38,17 +46,18 @@ export const customerController = {
         return res.status(400).json({ error: 'Email and password are required' });
       }
 
+      const existing = await CustomerModel.getByEmail(email) || await AdminModel.getByEmail(email);
+      if(!existing) {
+        return res.status(401).json({ error: 'Invalid credentials', message: 'Email not found or invalid' });
+      }
+
       const result = await CustomerAuthService.login(email, password);
-      return res.status(200).json({
-        message: 'Login successful',
-        customer: result.customer,
-        token: result.token,
-      });
+      return res.status(200).json({ message: 'Login successful', customer: result.customer, token: result.token });
     } catch (error: any) {
-      return res.status(500).json({
-        error: 'Internal server error',
-        message: error.message,
-      });
+      if(error.message === 'Invalid credentials') {
+        return res.status(401).json({ error: 'Invalid credentials', message: error.message });
+      }
+      return res.status(500).json({ error: 'Internal server error', message: error.message });
     }
   },
 
