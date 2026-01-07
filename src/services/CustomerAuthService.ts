@@ -98,6 +98,13 @@ export const CustomerAuthService = {
     if(newPassword.length < authConfig.password.minLength) {
       throw new Error(`Password must be at least ${authConfig.password.minLength} characters long`);
     }
+
+    const passwordHash = await bcrypt.hash(newPassword, bcryptConfig.saltRounds);
+    await CustomerModel.update(customerId, { passwordHash });
+
+    return {
+      message: 'Password changed successfully',
+    };
   },
 
   //obtener perfil de customer
@@ -117,6 +124,5 @@ export const CustomerAuthService = {
     }
     await CustomerModel.update(customerId, updates);
     return (await this.getProfile(customerId))!;
-    return customer;
   }
 }
