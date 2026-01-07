@@ -8,6 +8,7 @@ const firestoreToOrder = (data: any, id: string): Order => ({
   id,
   orderNumber: data.orderNumber,
   customer: data.customer,
+  customerId: data.customerId,
   items: data.items,
   status: data.status,
   total: data.total,
