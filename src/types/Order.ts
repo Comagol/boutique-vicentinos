@@ -31,6 +31,7 @@ export interface Order {
   id: string;
   orderNumber: string;
   customer: CustomerInfo;
+  customerId?: string; // ID del cliente en la base de datos
   items: OrderItem[];
   status: OrderStatus;
   total: number;
