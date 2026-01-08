@@ -6,7 +6,7 @@ import { PaymentService } from "../services/PaymentService";
 
 export const orderController = {
   //Crear orden POST (public)
-  async createOrder(req: Request, res: Response) {
+  async createOrder(req: AuthenticatedRequest, res: Response) {
     try {
       const { customer, items, paymentMethod } = req.body;
 
@@ -43,10 +43,15 @@ export const orderController = {
         }
       }
 
+      const customerId = req.user && req.user.role === 'customer' 
+        ? req.user.id 
+        : undefined;
+
       const order = await OrderService.createOrder(
         customer,
         items,
-        paymentMethod
+        paymentMethod,
+        customerId  
       );
 
       if (paymentMethod === 'mercadopago') {
