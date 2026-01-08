@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { orderController } from "../controllers/orderController";
-import { authenticate, requireAdmin } from "../middleware/auth";
+import { authenticate, requireAdmin, optionalAuthenticate } from "../middleware/auth";
 
 const router = Router();
 
 // ======== PUBLIC ROUTES ==========
-//Post /api/orders crear orden (public)
-router.post('/', orderController.createOrder);
+//Post /api/orders crear orden (public, pero puede recibir token opcional)
+router.post('/', optionalAuthenticate, orderController.createOrder);
 
 //Get /api/orders/number/:orderNumber obtener orden por numero de orden (public)
 router.get('/number/:orderNumber', orderController.getOrderByNumber);

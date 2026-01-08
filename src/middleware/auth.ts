@@ -74,3 +74,45 @@ export const requireCustomer = (
   }
   next();
 }
+
+//middleware de autenticacion OPCIONAL (no falla si no hay token)
+//Útil para rutas públicas que pueden beneficiarse de autenticación si está disponible
+export const optionalAuthenticate = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    // Si no hay header de autorización, simplemente continuar sin req.user
+    if (!authHeader) {
+      next();
+      return;
+    }
+
+    const token = authHeader.split(' ')[1]; // Bearer <token>
+
+    // Si no hay token en el formato correcto, continuar sin req.user
+    if (!token) {
+      next();
+      return;
+    }
+
+    // Intentar verificar el token
+    // Si es válido, agregar req.user
+    // Si es inválido, simplemente continuar sin req.user (no fallar)
+    try {
+      const decoded = AuthService.verifyToken(token);
+      req.user = decoded;
+    } catch (error) {
+      // Token inválido o expirado, pero no fallamos la petición
+      // Simplemente continuamos sin req.user
+    }
+
+    next();
+  } catch (error) {
+    // Cualquier otro error, continuar sin autenticación
+    next();
+  }
+};
