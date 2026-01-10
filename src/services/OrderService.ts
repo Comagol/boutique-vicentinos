@@ -275,4 +275,9 @@ export const OrderService = {
       return order.expiresAt <= expirationThreshold;
     });
   },
+
+  //actualizar preferenceId de una orden
+  async updateOrderPreferenceId(orderId: string, preferenceId: string): Promise<Order> {
+    return await OrderModel.update(orderId, { preferenceId });
+  },
 }
