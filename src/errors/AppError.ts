@@ -1,13 +1,13 @@
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
-  public readonly context?: string;
+  public readonly context?: Record<string, any> | string | undefined;
 
   constructor(
     statusCode: number,
     message: string,
     isOperational: boolean = true,
-    context?: string
+    context?: Record<string, any> | string
   ) {
     super(message);
     
@@ -16,7 +16,7 @@ export class AppError extends Error {
     
     this.statusCode = statusCode;
     this.isOperational = isOperational;
-    this.context = context || '';
+    this.context = context;
     this.name = this.constructor.name;
 
     // Captura el stack trace (útil para debugging)

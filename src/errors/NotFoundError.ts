@@ -1,11 +1,11 @@
-import { AppError } from "./AppError";
+import { AppError } from './AppError';
 
 export class NotFoundError extends AppError {
   constructor(resource: string, identifier?: string) {
     const message = identifier 
-    ? `${resource} with identifier ${identifier} not found`
-    : `${resource} not found`;
+      ? `${resource} with id '${identifier}' not found`
+      : `${resource} not found`;
     
-    super(404, message, true, `NotFoundError: ${resource}`);
+    super(404, message, true, { resource, identifier });
   }
 }
