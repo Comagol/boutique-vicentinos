@@ -22,3 +22,46 @@ const colors = {
   http: 'magenta',
   debug: 'white'
 };
+
+winston.addColors(colors);
+
+const consoleFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.colorize({ all: true }),
+  winston.format.printf(
+    (info) => `${info.timestamp} ${info.level}: ${info.message}`
+  )
+);
+
+const fileFormat = winston.format.combine(
+  winston.format.timestamp(),
+  winston.format.errors({ stack: true }),
+  winston.format.json()
+);
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  levels,
+  format: fileFormat,
+  transports: [
+    // Guardar todos los logs en un archivo
+    new winston.transports.File({
+      filename: path.join(logsDir, 'error.log'),
+      level: 'error',
+    }),
+    // Guardar todos los logs combinados
+    new winston.transports.File({
+      filename: path.join(logsDir, 'combined.log'),
+    }),
+  ],
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(
+    new winston.transports.Console({
+      format: consoleFormat,
+    })
+  );
+}
+
+export default logger;
