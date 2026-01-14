@@ -68,5 +68,23 @@ export const errorHandler = (
     });
   }
 
-  
+  logger.error({
+    message: 'Unexpected error',
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    ip: req.ip,
+    body: req.body,
+  });
+
+  return res.status(500).json({
+    success: false,
+    error: {
+      message: process.env.NODE_ENV === 'production' 
+        ? 'Internal server error' 
+        : err.message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    },
+  });
 }
