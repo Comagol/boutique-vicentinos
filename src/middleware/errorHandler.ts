@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import {AppError} from '../errors/AppError';
 import logger from '../config/logger';
+import path from 'path';
 
 export const errorHandler = (
   err: Error | AppError,
@@ -27,7 +28,45 @@ export const errorHandler = (
       },
     });
   }
+  if (err.name === 'MulterError') {
+    logger.error({
+      message: 'File upload error',
+      error: err.message,
+      stack: err.stack,
+      path: req.path,
+    });
 
+    if (err.message === 'File too large') {
+      return res.status(400).json({
+        success: false,
+        error: 'File too large',
+        message: 'El archivo excede el tamaño máximo permitido (5MB)',
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      error: {
+        message: 'Upload error',
+        details: err.message,
+      },
+    });
+  }
+
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    logger.warn({
+      message: 'Invalid JWT token',
+      error: err.name,
+      path: req.path,
+      ip: req.ip,
+    });
+
+    return res.status(401).json({
+      success: false,
+      error: {
+        message: 'Invalid or expired token',
+      },
+    });
+  }
 
   
 }
