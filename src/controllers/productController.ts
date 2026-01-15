@@ -25,22 +25,16 @@ export const productController = {
 
   //Get product by id (PUBLIC)
   async getProductById(req: Request, res: Response) {
-    try {
       const { id } = req.params;
       const product = await ProductService.getProductById(id as string);
       return res.status(200).json({
         message: 'Product fetched successfully',
         product,
-      })
-    } catch (error: any) {
-      const statusCode = error.message === 'Product not found' ? 404 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
+      });
   },
 
   //POST create product (ADMIN)
   async createProduct(req: AuthenticatedRequest, res: Response) {
-    try {
       
       let imageUrls: string[] = [];
       
@@ -103,31 +97,10 @@ export const productController = {
         message: 'Product created successfully',
         product,
       });
-    } catch (error: any) {
-      // Si hay archivos temporales y falló, intentar limpiarlos
-      if (req.files && Array.isArray(req.files)) {
-        try {
-          await StorageService.deleteLocalFiles(req.files as Express.Multer.File[]);
-        } catch (cleanupError) {
-          // Error silencioso al limpiar archivos temporales
-        }
-      }
-      
-      const statusCode = error.message.includes('required') || 
-                        error.message.includes('invalid') ||
-                        error.message.includes('must be') ? 400 : 500;
-      
-      return res.status(statusCode).json({ 
-        error: 'Error creating product',
-        message: error.message || 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-      });
-    }
   },
 
   //PUT update product (ADMIN)
   async updateProduct(req: AuthenticatedRequest, res: Response) {
-    try {
       const { id } = req.params;
       
       let imageUrls: string[] = [];
@@ -213,66 +186,37 @@ export const productController = {
         message: 'Product updated successfully',
         product,
       });
-    } catch (error: any) {
-      // Si hay archivos temporales y falló, intentar limpiarlos
-      if (req.files && Array.isArray(req.files)) {
-        try {
-          await StorageService.deleteLocalFiles(req.files as Express.Multer.File[]);
-        } catch (cleanupError) {
-          // Error silencioso al limpiar archivos temporales
-        }
-      }
-      
-      const statusCode = error.message.includes('required') ? 400 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //Delete product (ADMIN)
   async deleteProduct(req: AuthenticatedRequest, res: Response) {
-    try {
       const { id } = req.params;
       await ProductService.deleteProduct(id as string);
       return res.status(200).json({
         message: 'Product deleted successfully',
       });
-    } catch (error: any) {
-      const statusCode = error.message === 'Product not found' ? 404 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //POST activate product (ADMIN)
   async activateProduct(req:AuthenticatedRequest, res: Response) {
-    try {
       const { id } = req.params;
       await ProductService.activateProduct(id as string);
       return res.status(200).json({
         message: 'Product activated successfully',
       });
-    } catch (error: any) {
-      const statusCode = error.message === 'Product not found' ? 404 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //POST deactivate product (ADMIN)
   async deactivateProduct(req: AuthenticatedRequest, res: Response) {
-    try {
       const { id } = req.params;
       await ProductService.deactivateProduct(id as string);
       return res.status(200).json({
         message: 'Product deactivated successfully',
       });
-    } catch (error: any) {
-      const statusCode = error.message === 'Product not found' ? 404 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //GET all products including deactivated (ADMIN)
   async getAllProductsAdmin(req: AuthenticatedRequest, res: Response) {
-    try {
       const { category } = req.query;
       const products = await ProductService.getAllProducts(category as ProductCategory);
       return res.status(200).json({
@@ -280,8 +224,5 @@ export const productController = {
         products,
         count: products.length,
       });
-    } catch (error: any) {
-      return res.status(500).json({ message: 'Internal server error' });
-    }
   }
 }
