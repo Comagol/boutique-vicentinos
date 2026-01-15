@@ -3,11 +3,11 @@ import { ProductService } from "../services/ProductService";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { ProductCategory } from "../types/Product";
 import { StorageService } from "../services/StorageService";
+import { ValidationError } from "../errors/ValidationError";
 
 export const productController = {
   //Get all products (PUBLIC)
   async getAllProducts(req: Request, res: Response) {
-    try {
       const { category } = req.query;
       const products = await ProductService.getAllActiveProducts(category as ProductCategory | undefined);
       return res.status(200).json({
@@ -15,12 +15,6 @@ export const productController = {
         products,
         count: products.length,
       });
-    } catch (error: any) {
-      return res.status(500).json({
-        error: 'Internal server error',
-        message: error.message,
-      });
-    }
   },
 
   //Get product by id (PUBLIC)
