@@ -7,7 +7,6 @@ import { PaymentService } from "../services/PaymentService";
 export const orderController = {
   //Crear orden POST (public)
   async createOrder(req: AuthenticatedRequest, res: Response) {
-    try {
       const { customer, items, paymentMethod } = req.body;
 
       if(!customer || !items || !paymentMethod) {
@@ -83,17 +82,10 @@ export const orderController = {
       }
 
       return res.status(201).json({ message: 'Order created successfully', order });
-    } catch (error: any) {
-      const statusCode = error.message.includes('not found') ||
-                         error.message.includes('Stock') 
-                         ? 404 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //GET obtener order por numero de orden (public)
   async getOrderByNumber(req: Request, res: Response) {
-    try {
       const { orderNumber } = req.params;
 
       if(!orderNumber) {
@@ -108,15 +100,10 @@ export const orderController = {
         message: 'Order fetched successfully',
         order,
       });
-    } catch (error: any) {
-      const statusCode = error.message.includes('not found') ? 404 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //GET obtener todas las ordenes (Admin)
   async getAllOrders(req: AuthenticatedRequest, res: Response) {
-    try {
       const { status, customerEmail } = req.query;
 
       const filters: { status?: OrderStatus; customerEmail?: string } = {};
@@ -135,17 +122,10 @@ export const orderController = {
         orders,
         count: orders.length,
       })
-    } catch (error: any) {
-      return res.status(500).json({
-        error: 'Internal server error',
-        message: error.message,
-       });
-    }
   },
 
   //Get obtener orden por id (Admin)
   async getOrderById(req: AuthenticatedRequest, res: Response) {
-    try {
       const { id } = req.params
       if(!id) {
         return res.status(400).json({
@@ -157,15 +137,10 @@ export const orderController = {
         message: 'Order fetched successfully',
         order,
       });
-    } catch (error: any) {
-      const statusCode = error.message.includes('not found') ? 404 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //post cancelar orden (public)
   async cancelOrder(req:Request, res: Response) {
-    try {
       const { orderId } = req.body;
 
       if(!orderId) {
@@ -179,16 +154,10 @@ export const orderController = {
         message: 'Order cancelled successfully',
         order,
       });
-    } catch (error: any) {
-      const statusCode = error.message.includes('not found') ||
-                         error.message.includes('Only orders with status pending payment can be canceled') ? 400 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //Post para marcar orden como entregada (Admin)
   async markAsDelivered(req: AuthenticatedRequest, res: Response) {
-    try {
       const { orderId } = req.body;
 
       if(!orderId) {
@@ -200,16 +169,10 @@ export const orderController = {
         message: 'Order marked as delivered successfully',
         order,
       });
-    } catch (error: any) {
-      const statusCode = error.message.includes('not found') ||
-                         error.message.includes('Only orders with status payment confirmed can be marked as delivered') ? 400 : 500;
-      return res.status(statusCode).json({ message: error.message });
-    }
   },
 
   //Get de las ordenes proximas a expirar (Admin)
   async getOrdersExpiringSoon(req: AuthenticatedRequest, res: Response) {
-    try {
       const { hours } = req.query;
       const hoursNumber = hours ? parseInt(hours as string, 10) : 24;
 
@@ -223,17 +186,10 @@ export const orderController = {
         orders,
         count: orders.length,
       });
-    } catch (error: any) {
-      return res.status(500).json({
-        error: 'Internal server error',
-        message: error.message,
-      });
-    }
   },
 
    // POST - Confirmar pago (PÚBLICO)
    async confirmPayment(req: Request, res: Response) {
-    try {
       const { orderId, paymentId } = req.body;
 
       if (!orderId || !paymentId) {
@@ -248,18 +204,10 @@ export const orderController = {
         message: 'Payment confirmed successfully',
         order,
       });
-    } catch (error: any) {
-      const statusCode = error.message.includes('not found') || 
-                        error.message.includes('not pending') 
-                        ? 400 : 500;
-
-      return res.status(statusCode).json({ error: error.message });
-    }
   },
 
   // POST - Webhook de Mercado Pago (notificaciones automáticas)
   async handleWebhook(req: Request, res: Response) {
-    try {
       const { type, data } = req.body;
 
       // Mercado Pago puede enviar diferentes tipos de notificaciones
@@ -310,15 +258,10 @@ export const orderController = {
       // Siempre responder 200 a Mercado Pago (importante)
       // Si respondes error, Mercado Pago seguirá reenviando la notificación
       return res.status(200).json({ received: true });
-    } catch (error: any) {
-      // Aún así responder 200 para evitar reenvíos infinitos
-      return res.status(200).json({ received: true, error: 'Webhook processing error' });
-    }
   },
 
   // GET/POST - Procesar retorno desde Mercado Pago y verificar estado del pago
   async handlePaymentReturn(req: Request, res: Response) {
-    try {
       // Mercado Pago puede enviar payment_id, collection_id, status, preference_id
       // Puede venir en query params (GET) o en body (POST)
       const queryParams = req.query || {};
@@ -500,17 +443,10 @@ export const orderController = {
         console.error('[Payment Return] Error processing payment:', paymentError.message);
         return res.redirect(`${baseFrontendUrl}/checkout/mercadopago-callback?error=Error processing payment`);
       }
-    } catch (error: any) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const baseFrontendUrl = frontendUrl.replace(/\/$/, '');
-      console.error('[Payment Return] Unexpected error:', error.message);
-      return res.redirect(`${baseFrontendUrl}/checkout/mercadopago-callback?error=Unexpected error`);
-    }
   },
 
   // GET - Obtener estado de pago de una orden (público)
   async getPaymentStatus(req: Request, res: Response) {
-    try {
       const { orderId } = req.params;
 
       if (!orderId) {
@@ -554,11 +490,5 @@ export const orderController = {
           error: `Could not fetch updated payment status: ${paymentError.message}`,
         });
       }
-    } catch (error: any) {
-      const statusCode = error.message.includes('not found') ? 404 : 500;
-      return res.status(statusCode).json({ 
-        error: error.message 
-      });
-    }
-  }
+  },
 }
