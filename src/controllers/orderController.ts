@@ -3,6 +3,7 @@ import { OrderService } from "../services/OrderService";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { OrderStatus } from "../types/";
 import { PaymentService } from "../services/PaymentService";
+import { ValidationError } from "../errors/ValidationError";
 
 export const orderController = {
   //Crear orden POST (public)
@@ -10,35 +11,25 @@ export const orderController = {
       const { customer, items, paymentMethod } = req.body;
 
       if(!customer || !items || !paymentMethod) {
-        return res.status(400).json({
-          error: 'Customer, items and payment method are required'
-        });
+        throw new ValidationError('Customer, items and payment method are required');
       }
 
       if(!customer.name || !customer.email || !customer.phone) {
-        return res.status(400).json({
-          error: 'Customer name, email and phone are required'
-        });
+        throw new ValidationError('Customer name, email and phone are required');
       }
 
       if(!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({
-          error: 'Items must be an array and must contain at least one item'
-        });
+        throw new ValidationError('Items must be an array and must contain at least one item');
       }
 
       //validar items
       for (const item of items) {
         if(!item.productId || !item.size || !item.color || !item.quantity) {
-          return res.status(400).json({
-            error: 'Each item must have a productId, size, color and quantity'
-          });
+          throw new ValidationError('Each item must have a productId, size, color and quantity');
         }
 
         if(item.quantity <= 0) {
-          return res.status(400).json({
-            error: 'Quantity must be greater than 0'
-          });
+          throw new ValidationError('Quantity must be greater than 0');
         }
       }
 
@@ -72,11 +63,11 @@ export const orderController = {
           });
         } catch (paymentError: any) {
           // Si falla crear la preferencia, aún así retornamos la orden
-          // (el admin puede crear el pago manualmente después)
           return res.status(201).json({
+            success: true,
             message: 'Order created successfully, but payment URL could not be generated',
-            order,
-            error: paymentError.message,
+            data: { order },
+            warning: paymentError.message,
           });
         }
       }
@@ -89,9 +80,7 @@ export const orderController = {
       const { orderNumber } = req.params;
 
       if(!orderNumber) {
-        return res.status(400).json({
-          error: 'Order number is required'
-        });
+        throw new ValidationError('Order number is required');
       }
 
       const order = await OrderService.getOrderByNumber(orderNumber);
@@ -128,9 +117,7 @@ export const orderController = {
   async getOrderById(req: AuthenticatedRequest, res: Response) {
       const { id } = req.params
       if(!id) {
-        return res.status(400).json({
-          error: 'Order ID is required'
-        });
+        throw new ValidationError('Order ID is required');
       }
       const order = await OrderService.getOrderById(id as string);
       return res.status(200).json({
@@ -144,9 +131,7 @@ export const orderController = {
       const { orderId } = req.body;
 
       if(!orderId) {
-        return res.status(400).json({
-          error: 'Order ID is required'
-        });
+        throw new ValidationError('Order ID is required');
       }
 
       const order = await OrderService.cancelOrder(orderId as string);
@@ -161,7 +146,7 @@ export const orderController = {
       const { orderId } = req.body;
 
       if(!orderId) {
-        return res.status(400).json({error: ' order ID is required'})
+        throw new ValidationError(' order ID is required');
       }
 
       const order = await OrderService.markAsDelivered(orderId as string);
@@ -177,7 +162,7 @@ export const orderController = {
       const hoursNumber = hours ? parseInt(hours as string, 10) : 24;
 
       if(isNaN(hoursNumber) || hoursNumber <= 0) {
-        return res.status(400).json({error: 'Hours must be a positive number'});
+        throw new ValidationError('Hours must be a positive number');
       }
 
       const orders = await OrderService.getOrdersExpiringSoon(hoursNumber);
@@ -193,9 +178,7 @@ export const orderController = {
       const { orderId, paymentId } = req.body;
 
       if (!orderId || !paymentId) {
-        return res.status(400).json({ 
-          error: 'orderId and paymentId are required' 
-        });
+        throw new ValidationError('orderId and paymentId are required');
       }
 
       const order = await OrderService.confirmPayment(orderId, paymentId);
@@ -285,7 +268,7 @@ export const orderController = {
       if (!paymentId && !preferenceId) {
         // Si no hay información del pago, redirigir al frontend con error
         console.error('[Payment Return] No payment information provided');
-        return res.redirect(`${baseFrontendUrl}/order/error?message=No payment information provided`);
+        throw new ValidationError('No payment information provided');
       }
 
       try {
@@ -403,14 +386,14 @@ export const orderController = {
             console.log('[Payment Return] Order found by preferenceId:', { orderId, paymentStatus });
           } catch (prefError: any) {
             console.error('[Payment Return] Error finding order by preferenceId:', prefError.message);
-            return res.redirect(`${baseFrontendUrl}/checkout/mercadopago-callback?error=Order not found for preference`);
+            throw new ValidationError('Order not found for preference');
           }
         }
 
         // Redirigir al frontend según el estado
         if (!orderId) {
           console.error('[Payment Return] Order ID not found');
-          return res.redirect(`${baseFrontendUrl}/checkout/mercadopago-callback?error=Order not found`);
+          throw new ValidationError('Order not found');
         }
 
         // Determinar el estado del pago
@@ -441,7 +424,7 @@ export const orderController = {
       } catch (paymentError: any) {
         // Si hay error al obtener el pago, redirigir con error
         console.error('[Payment Return] Error processing payment:', paymentError.message);
-        return res.redirect(`${baseFrontendUrl}/checkout/mercadopago-callback?error=Error processing payment`);
+        throw new ValidationError('Error processing payment');
       }
   },
 
@@ -450,20 +433,14 @@ export const orderController = {
       const { orderId } = req.params;
 
       if (!orderId) {
-        return res.status(400).json({
-          error: 'Order ID is required'
-        });
+        throw new ValidationError('Order ID is required');
       }
 
       // Obtener la orden
       const order = await OrderService.getOrderById(orderId);
 
       if (!order.paymentId) {
-        return res.status(200).json({
-          orderId: order.id,
-          paymentStatus: 'no-payment',
-          message: 'No payment has been processed for this order',
-        });
+        throw new ValidationError('No payment has been processed for this order');
       }
 
       try {
@@ -482,13 +459,7 @@ export const orderController = {
         });
       } catch (paymentError: any) {
         // Si hay error al obtener el pago, retornar información de la orden
-        return res.status(200).json({
-          orderId: order.id,
-          orderStatus: order.status,
-          paymentId: order.paymentId,
-          paymentStatus: order.paymentStatus || 'unknown',
-          error: `Could not fetch updated payment status: ${paymentError.message}`,
-        });
+        throw new ValidationError(`Could not fetch updated payment status: ${paymentError.message}`);
       }
   },
 }
