@@ -1,6 +1,8 @@
 //importo los modelos y tipos
 import { ProductModel } from '../models/Products';
 import { Product, ProductCategory } from '../types/Product';
+import { NotFoundError } from '../errors/NotFoundError';
+import { ValidationError } from '../errors/ValidationError';
 
 //Servicios para Productos
 export const ProductService = {
@@ -53,7 +55,7 @@ export const ProductService = {
   async getProductById(id: string): Promise<Product> {
     const product = await ProductModel.getById(id);
     if(!product) {
-      throw new Error('Product not found');
+      throw new NotFoundError('Product', id);
     }
     return product;
   },
@@ -85,11 +87,11 @@ export const ProductService = {
 
     // Validaciones
     if (updates.name !== undefined && updates.name.trim() === '') {
-      throw new Error('Name cannot be empty');
+      throw new ValidationError('Name cannot be empty', ['name']);
     }
 
     if (updates.price !== undefined && updates.price <= 0) {
-      throw new Error('Price must be greater than 0');
+      throw new ValidationError('Price must be greater than 0', ['price']);
     }
 
     // Validar descuento
@@ -98,10 +100,10 @@ export const ProductService = {
       const price = updates.price || currentProduct!.price;
       
       if (updates.discountPrice >= price) {
-        throw new Error('Discount price must be less than the original price');
+        throw new ValidationError('Discount price must be less than the original price', ['discountPrice']);
       }
       if (updates.discountPrice <= 0) {
-        throw new Error('Discount price must be greater than 0');
+        throw new ValidationError('Discount price must be greater than 0', ['discountPrice']);
       }
     }
 
@@ -165,7 +167,7 @@ export const ProductService = {
   async checkStock(productId: string, size: string, color: string, quantity: number): Promise<boolean> {
     const product = await ProductModel.getById(productId);
     if (!product) {
-      throw new Error('Product not found');
+      throw new NotFoundError('Product', productId);
     }
 
     const stockItem = product.stock.find(s => 
