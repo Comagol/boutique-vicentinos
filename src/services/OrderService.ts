@@ -3,13 +3,15 @@ import { OrderModel } from '../models/Orders';
 import { ProductModel } from '../models/Products';
 import { CustomerInfo, Order, OrderItem, OrderStatus } from '../types/Order';
 import { Product } from '../types/Product';
+import { NotFoundError } from '../errors/NotFoundError';
+import { ValidationError } from '../errors/ValidationError';
+import logger from '../config/logger';
 
 //configuracion de la reserva
 const RESERVATION_DAYS = 3;
 
 //Order service
 export const OrderService = {
-  //CREAR orden con reserva de stock
   async createOrder(
     customer: CustomerInfo,
     items: Array<{
@@ -19,30 +21,40 @@ export const OrderService = {
       quantity: number;
     }>,
     paymentMethod: string,
-    customerId?: string, // ID del cliente en la base de datos (opcional)
+    customerId?: string,
   ): Promise<Order> {
-    //validar si el stock esta disponible
+    logger.info({
+      message: 'Creating order',
+      customerEmail: customer.email,
+      itemCount: items.length,
+    });
+
     const productData: Product[] = [];
     for (const item of items) {
       const product = await ProductModel.getById(item.productId);
-      if(!product) {
-        throw new Error(`Product ${item.productId} not found`);
+      if (!product) {
+        throw new NotFoundError('Product', item.productId);
       }
 
-      //valido el stock
       const stockItem = product.stock.find(
         s => s.size === item.size && s.color === item.color
       );
 
-      if(!stockItem) {
-        throw new Error(`Stock item not found for the ${product.name} in size ${item.size} and color ${item.color}`)
+      if (!stockItem) {
+        throw new ValidationError(
+          `Stock item not found for ${product.name} in size ${item.size} and color ${item.color}`,
+          ['size', 'color']
+        );
       }
 
-      if(stockItem.quantity < item.quantity) {
-        throw new Error(`Not enough stock for the ${product.name} in size ${item.size} and color ${item.color}`)
+      if (stockItem.quantity < item.quantity) {
+        throw new ValidationError(
+          `Not enough stock for ${product.name} in size ${item.size} and color ${item.color}. Available: ${stockItem.quantity}, Requested: ${item.quantity}`,
+          ['quantity']
+        );
       }
 
-      productData.push(product);      
+      productData.push(product);
     }
 
     //calculo el total
@@ -79,7 +91,7 @@ export const OrderService = {
     //reservo stock (descontar)
     for(const item of items) {
       const product = await ProductModel.getById(item.productId);
-      if(!product) throw new Error(`Product ${item.productId} not found`);
+      if(!product) throw new NotFoundError('Product', item.productId);
 
       const updatedStock = product.stock.map(stockItem => {
         if(stockItem.size === item.size && stockItem.color === item.color) {
@@ -138,6 +150,12 @@ export const OrderService = {
       orderResult.customerId = customerId;
     }
     
+    logger.info({
+      message: 'Order created successfully',
+      orderId: orderResult.id,
+      orderNumber: orderResult.orderNumber,
+    });
+
     return orderResult;
   },
 
@@ -146,7 +164,7 @@ export const OrderService = {
     const order = await this.getOrderById(orderId);
 
     if (order.status !== 'pending-payment') {
-      throw new Error(`Order ${orderId} is not pending payment`);
+      throw new ValidationError(`Order ${orderId} is not pending payment`, ['status']);
     }
 
     return await OrderModel.confirmPayment(orderId, paymentId, paymentStatus);
@@ -160,7 +178,7 @@ export const OrderService = {
     const order = await this.getOrderById(orderId);
 
     if (order.status !== 'pending-payment') {
-      throw new Error(`Only orders with status pending payment can be canceled`);
+      throw new ValidationError(`Only orders with status pending payment can be canceled`, ['status']);
     }
 
     //reponer stock con batch y modificar el estado
@@ -201,7 +219,7 @@ export const OrderService = {
     const order = await this.getOrderById(orderId);
 
     if (order.status !== 'payment-confirmed') {
-      throw new Error(`Only orders with status payment confirmed can be marked as delivered`);
+      throw new ValidationError(`Only orders with status payment confirmed can be marked as delivered`, ['status']);
     }
 
     return await OrderModel.markAsDelivered(orderId);
@@ -228,7 +246,7 @@ export const OrderService = {
   async getOrderById(id: string): Promise<Order> {
     const order = await OrderModel.getById(id);
     if(!order) {
-      throw new Error(`Order ${id} not found`);
+      throw new NotFoundError('Order', id);
     }
     return order;
   },
@@ -237,7 +255,7 @@ export const OrderService = {
   async getOrderByNumber(orderNumber: string): Promise<Order> {
     const order = await OrderModel.getByOrderNumber(orderNumber);
     if(!order) {
-      throw new Error(`Order ${orderNumber} not found`);
+      throw new NotFoundError('Order', orderNumber);
     }
     return order;
   },
@@ -246,7 +264,7 @@ export const OrderService = {
   async getOrderByPreferenceId(preferenceId: string): Promise<Order> {
     const order = await OrderModel.getByPreferenceId(preferenceId);
     if(!order) {
-      throw new Error(`Order with preferenceId ${preferenceId} not found`);
+      throw new NotFoundError('Order', preferenceId);
     }
     return order;
   },
