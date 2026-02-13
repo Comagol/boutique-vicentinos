@@ -10,6 +10,16 @@ import logger from '../config/logger';
 //configuracion de la reserva
 const RESERVATION_DAYS = 3;
 
+const normalizeOption = (value: string): string => value.trim().toUpperCase();
+
+const findVariantSize = (product: Product, size: string, color: string) => {
+  const normalizedSize = normalizeOption(size);
+  const normalizedColor = normalizeOption(color);
+  const variant = product.variants.find((entry) => entry.color === normalizedColor);
+  const sizeEntry = variant?.sizes.find((entry) => entry.size === normalizedSize);
+  return { variant, sizeEntry, normalizedSize, normalizedColor };
+};
+
 //Order service
 export const OrderService = {
   async createOrder(
@@ -36,20 +46,18 @@ export const OrderService = {
         throw new NotFoundError('Product', item.productId);
       }
 
-      const stockItem = product.stock.find(
-        s => s.size === item.size && s.color === item.color
-      );
+      const { sizeEntry } = findVariantSize(product, item.size, item.color);
 
-      if (!stockItem) {
+      if (!sizeEntry) {
         throw new ValidationError(
           `Stock item not found for ${product.name} in size ${item.size} and color ${item.color}`,
           ['size', 'color']
         );
       }
 
-      if (stockItem.quantity < item.quantity) {
+      if (sizeEntry.quantity < item.quantity) {
         throw new ValidationError(
-          `Not enough stock for ${product.name} in size ${item.size} and color ${item.color}. Available: ${stockItem.quantity}, Requested: ${item.quantity}`,
+          `Not enough stock for ${product.name} in size ${item.size} and color ${item.color}. Available: ${sizeEntry.quantity}, Requested: ${item.quantity}`,
           ['quantity']
         );
       }
@@ -93,17 +101,34 @@ export const OrderService = {
       const product = await ProductModel.getById(item.productId);
       if(!product) throw new NotFoundError('Product', item.productId);
 
-      const updatedStock = product.stock.map(stockItem => {
-        if(stockItem.size === item.size && stockItem.color === item.color) {
-          return {
-            ...stockItem,
-            quantity: stockItem.quantity - item.quantity,
-          };
+      const { sizeEntry, normalizedColor, normalizedSize } = findVariantSize(product, item.size, item.color);
+      if (!sizeEntry) {
+        throw new ValidationError(
+          `Stock item not found for ${product.name} in size ${item.size} and color ${item.color}`,
+          ['size', 'color']
+        );
+      }
+      const updatedVariants = product.variants.map((variant) => {
+        if (variant.color !== normalizedColor) {
+          return variant;
         }
-        return stockItem;
+
+        return {
+          ...variant,
+          sizes: variant.sizes.map((sizeEntry) => {
+            if (sizeEntry.size !== normalizedSize) {
+              return sizeEntry;
+            }
+
+            return {
+              ...sizeEntry,
+              quantity: sizeEntry.quantity - item.quantity,
+            };
+          }),
+        };
       });
       const productRef = db.collection('products').doc(item.productId);
-      batch.update(productRef, { stock: updatedStock });
+      batch.update(productRef, { variants: updatedVariants });
     }
 
     //creo la orden
@@ -189,17 +214,34 @@ export const OrderService = {
       const product = await ProductModel.getById(item.productId);
       if(!product) continue;
 
-      const updatedStock = product.stock.map(stockItem => {
-        if (stockItem.size === item.size && stockItem.color == item.color) {
-          return {
-            ...stockItem,
-            quantity: stockItem.quantity + item.quantity,
-          };
+      const { sizeEntry, normalizedColor, normalizedSize } = findVariantSize(product, item.size, item.color);
+      if (!sizeEntry) {
+        throw new ValidationError(
+          `Stock item not found for ${product.name} in size ${item.size} and color ${item.color}`,
+          ['size', 'color']
+        );
+      }
+      const updatedVariants = product.variants.map((variant) => {
+        if (variant.color !== normalizedColor) {
+          return variant;
         }
-        return stockItem;
+
+        return {
+          ...variant,
+          sizes: variant.sizes.map((sizeEntry) => {
+            if (sizeEntry.size !== normalizedSize) {
+              return sizeEntry;
+            }
+
+            return {
+              ...sizeEntry,
+              quantity: sizeEntry.quantity + item.quantity,
+            };
+          }),
+        };
       });
       const productRef = db.collection('products').doc(item.productId);
-      batch.update(productRef, { stock: updatedStock });
+      batch.update(productRef, { variants: updatedVariants });
     }
 
     //cambio el estado de la orden

@@ -69,18 +69,19 @@ export const productController = {
           : true, // Por defecto true
       };
       
-      // Parsear arrays JSON si vienen como strings - CRÍTICO: asegurar que sean arrays
-      normalizedData.sizes = typeof req.body.sizes === 'string' && req.body.sizes.trim() !== ''
-        ? JSON.parse(req.body.sizes)
-        : (Array.isArray(req.body.sizes) ? req.body.sizes : []);
-      
+      // Parsear arrays JSON si vienen como strings
+      normalizedData.variants = typeof req.body.variants === 'string' && req.body.variants.trim() !== ''
+        ? JSON.parse(req.body.variants)
+        : (Array.isArray(req.body.variants) ? req.body.variants : undefined);
+
+      // Compatibilidad temporal: si no viene variants, aceptar payload legacy
       normalizedData.colors = typeof req.body.colors === 'string' && req.body.colors.trim() !== ''
         ? JSON.parse(req.body.colors)
-        : (Array.isArray(req.body.colors) ? req.body.colors : []);
+        : (Array.isArray(req.body.colors) ? req.body.colors : undefined);
       
       normalizedData.stock = typeof req.body.stock === 'string' && req.body.stock.trim() !== ''
         ? JSON.parse(req.body.stock)
-        : (Array.isArray(req.body.stock) ? req.body.stock : []);
+        : (Array.isArray(req.body.stock) ? req.body.stock : undefined);
       
       // Las imágenes ya fueron procesadas arriba, pero asegurémonos de que sea array
       normalizedData.images = Array.isArray(normalizedData.images) ? normalizedData.images : [];
@@ -143,13 +144,14 @@ export const productController = {
           : Boolean(req.body.isActive);
       }
       
-      // Parsear arrays JSON si vienen como strings - CRÍTICO
-      if (req.body.sizes !== undefined) {
-        normalizedData.sizes = typeof req.body.sizes === 'string' && req.body.sizes.trim() !== ''
-          ? JSON.parse(req.body.sizes)
-          : (Array.isArray(req.body.sizes) ? req.body.sizes : []);
+      // Parsear arrays JSON si vienen como strings
+      if (req.body.variants !== undefined) {
+        normalizedData.variants = typeof req.body.variants === 'string' && req.body.variants.trim() !== ''
+          ? JSON.parse(req.body.variants)
+          : (Array.isArray(req.body.variants) ? req.body.variants : []);
       }
-      
+
+      // Compatibilidad temporal: payload legacy
       if (req.body.colors !== undefined) {
         normalizedData.colors = typeof req.body.colors === 'string' && req.body.colors.trim() !== ''
           ? JSON.parse(req.body.colors)

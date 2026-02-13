@@ -3,43 +3,76 @@ import { ProductModel } from '../models/Products';
 import { Product, ProductCategory } from '../types/Product';
 import { NotFoundError } from '../errors/NotFoundError';
 import { ValidationError } from '../errors/ValidationError';
+import { resolveVariantsFromPayload } from '../utils/productVariants';
+
+type LegacyStockInput = {
+  size?: string;
+  color?: string | null;
+  quantity?: number;
+};
+
+type ProductCreateInput = Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'variants'> & {
+  variants?: Product['variants'];
+  stock?: LegacyStockInput[];
+  colors?: string[];
+};
+
+type ProductUpdateInput = Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'variants'>> & {
+  variants?: Product['variants'];
+  stock?: LegacyStockInput[];
+  colors?: string[];
+};
 
 //Servicios para Productos
 export const ProductService = {
   //CREAR producto
-  async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
+  async createProduct(productData: ProductCreateInput): Promise<Product> {
     if (!productData.name || productData.name.trim() === '') {
-      throw new Error('Name is required');
+      throw new ValidationError('Name is required', ['name']);
     }
     if (!productData.description || productData.description.trim() === '') {
-      throw new Error('Description is required');
+      throw new ValidationError('Description is required', ['description']);
     }
     if (!productData.category) {
-      throw new Error('Category is required');
+      throw new ValidationError('Category is required', ['category']);
     }
     if (!productData.price || productData.price <= 0) {
-      throw new Error('Price must be greater than 0');
+      throw new ValidationError('Price must be greater than 0', ['price']);
     }
 
+    const variants = resolveVariantsFromPayload({
+      variants: productData.variants,
+      stock: productData.stock,
+      colors: productData.colors,
+      baseColor: productData.baseColor,
+    });
+
     //valores por defecto
-    const newProduct = {
-      ...productData,
+    const newProduct: Omit<Product, 'id' | 'createdAt' | 'updatedAt'> = {
+      name: productData.name,
+      description: productData.description,
+      category: productData.category,
       tags: productData.tags || [],
+      price: productData.price,
       images: productData.images || [],
-      sizes: productData.sizes || [],
-      colors: productData.colors || [],
-      stock: productData.stock || [],
+      variants,
       isActive: productData.isActive ?? true,
-      description: productData.description || '',
     };
+
+    if (productData.baseColor !== undefined && productData.baseColor.trim() !== '') {
+      newProduct.baseColor = productData.baseColor;
+    }
+    if (productData.discountPrice !== undefined) {
+      newProduct.discountPrice = productData.discountPrice;
+    }
     
     // Si hay descuento, validar que sea menor al precio original
     if (productData.discountPrice) {
       if (productData.discountPrice >= productData.price) {
-        throw new Error('Discount price must be less than the original price');
+        throw new ValidationError('Discount price must be less than the original price', ['discountPrice']);
       }
       if (productData.discountPrice <= 0) {
-        throw new Error('Discount price must be greater than 0');
+        throw new ValidationError('Discount price must be greater than 0', ['discountPrice']);
       }
     }
 
@@ -81,9 +114,9 @@ export const ProductService = {
 
   
   // Actualizar producto
-  async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
+  async updateProduct(id: string, updates: ProductUpdateInput): Promise<Product> {
     // Verificar que el producto existe
-    await this.getProductById(id);
+    const currentProduct = await this.getProductById(id);
 
     // Validaciones
     if (updates.name !== undefined && updates.name.trim() === '') {
@@ -96,8 +129,7 @@ export const ProductService = {
 
     // Validar descuento
     if (updates.discountPrice !== undefined) {
-      const currentProduct = await ProductModel.getById(id);
-      const price = updates.price || currentProduct!.price;
+      const price = updates.price || currentProduct.price;
       
       if (updates.discountPrice >= price) {
         throw new ValidationError('Discount price must be less than the original price', ['discountPrice']);
@@ -112,9 +144,25 @@ export const ProductService = {
       updates.tags = this.generateTagsFromCategory(updates.category as ProductCategory);
     }
 
+    if (
+      updates.variants !== undefined ||
+      updates.stock !== undefined ||
+      updates.colors !== undefined ||
+      updates.baseColor !== undefined
+    ) {
+      updates.variants = resolveVariantsFromPayload({
+        variants: updates.variants ?? currentProduct.variants,
+        stock: updates.stock,
+        colors: updates.colors,
+        baseColor: updates.baseColor ?? currentProduct.baseColor,
+      });
+    }
+
+    const { stock, colors, ...updatesWithoutLegacy } = updates;
+
     // Actualizar
     return await ProductModel.update(id, {
-      ...updates,
+      ...updatesWithoutLegacy,
       updatedAt: new Date(),
     });
   },
@@ -170,14 +218,15 @@ export const ProductService = {
       throw new NotFoundError('Product', productId);
     }
 
-    const stockItem = product.stock.find(s => 
-      s.size === size && s.color === color
-    );
+    const normalizedColor = color.trim().toUpperCase();
+    const normalizedSize = size.trim().toUpperCase();
+    const variant = product.variants.find((entry) => entry.color === normalizedColor);
+    const sizeEntry = variant?.sizes.find((entry) => entry.size === normalizedSize);
 
-    if (!stockItem) {
+    if (!sizeEntry) {
       return false;
     }
 
-    return stockItem.quantity >= quantity;
+    return sizeEntry.quantity >= quantity;
   },
 }

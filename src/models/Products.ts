@@ -1,5 +1,6 @@
 import { db } from '../config/firebase';
 import { Product, ProductCategory } from '../types/Product';
+import { legacyStockToVariants, normalizeAndValidateVariants } from '../utils/productVariants';
 
 const COLLECTION_NAME = 'products';
 
@@ -30,6 +31,29 @@ const ensureBoolean = (value: any, defaultValue: boolean = true): boolean => {
 };
 
 // Convierto Firestore Timestamp a date
+const resolveVariantsFromFirestore = (data: any) => {
+  try {
+    const rawVariants = ensureArray<any>(data.variants, []);
+    if (rawVariants.length > 0) {
+      return normalizeAndValidateVariants(rawVariants);
+    }
+
+    const rawStock = ensureArray<any>(data.stock, []);
+    if (rawStock.length > 0) {
+      return legacyStockToVariants({
+        stock: rawStock,
+        colors: ensureArray<string>(data.colors, []),
+        baseColor: data.baseColor,
+      });
+    }
+
+    return normalizeAndValidateVariants([], { allowEmpty: true });
+  } catch {
+    // Mantener lectura resiliente para productos legacy corruptos
+    return normalizeAndValidateVariants([], { allowEmpty: true });
+  }
+};
+
 const firestoreToProduct = (data: any, id: string): Product => ({
   id,
   name: data.name || '',
@@ -43,9 +67,7 @@ const firestoreToProduct = (data: any, id: string): Product => ({
     ? (typeof data.discountPrice === 'number' ? data.discountPrice : parseFloat(data.discountPrice))
     : undefined,
   images: ensureArray<string>(data.images, []),
-  sizes: ensureArray<any>(data.sizes, []),
-  colors: ensureArray<string>(data.colors, []),
-  stock: ensureArray<any>(data.stock, []),
+  variants: resolveVariantsFromFirestore(data),
   isActive: ensureBoolean(data.isActive, true),
   createdAt: data.createdAt?.toDate() || new Date(),
   updatedAt: data.updatedAt?.toDate() || new Date(),
@@ -65,14 +87,8 @@ const productToFirestore = (product: Partial<Product>): any => {
   if (firestoreData.images !== undefined) {
     firestoreData.images = ensureArray<string>(firestoreData.images, []);
   }
-  if (firestoreData.sizes !== undefined) {
-    firestoreData.sizes = ensureArray<any>(firestoreData.sizes, []);
-  }
-  if (firestoreData.colors !== undefined) {
-    firestoreData.colors = ensureArray<string>(firestoreData.colors, []);
-  }
-  if (firestoreData.stock !== undefined) {
-    firestoreData.stock = ensureArray<any>(firestoreData.stock, []);
+  if (firestoreData.variants !== undefined) {
+    firestoreData.variants = normalizeAndValidateVariants(firestoreData.variants);
   }
   
   // Asegurar que isActive sea boolean

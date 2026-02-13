@@ -16,32 +16,26 @@ export type ProductCategory =
 | 'gorros'
 | 'otros';
 
-export type SizeType = 'adulto' | 'infantil';
-
-export interface ProductSize {
+export interface VariantSize {
   size: string;
-  type: SizeType;
-}
-
-export interface StockInfo {
-  size: string;
-  color?: string;
   quantity: number;
 }
 
+export interface ProductVariant {
+  color: string;
+  sizes: VariantSize[];
+}
 export interface Product {
   id: string;
   name: string;
   description: string;
   category: ProductCategory;
   baseColor?: string;
+  variants: ProductVariant[];
   tags: string[];
   price: number;
   discountPrice?: number;
   images: string[];
-  sizes: ProductSize[];
-  colors: string[];
-  stock: StockInfo[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
