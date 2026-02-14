@@ -262,12 +262,8 @@ export const orderController = {
       const preferenceId = preference_id?.toString();
       const statusParam = status?.toString();
 
-      // Log para debugging (opcional, remover en producción)
-      console.log('[Payment Return] Params received:', { paymentId, preferenceId, statusParam });
-
       if (!paymentId && !preferenceId) {
         // Si no hay información del pago, redirigir al frontend con error
-        console.error('[Payment Return] No payment information provided');
         throw new ValidationError('No payment information provided');
       }
 
@@ -283,8 +279,6 @@ export const orderController = {
             orderId = paymentInfo.externalReference;
             paymentStatus = paymentInfo.status;
 
-            console.log('[Payment Return] Payment info retrieved:', { orderId, paymentStatus });
-
             // Actualizar el estado de la orden según el estado del pago
             if (orderId) {
               if (paymentStatus === 'approved') {
@@ -294,11 +288,9 @@ export const orderController = {
                   
                   if (order.status === 'pending-payment') {
                     await OrderService.confirmPayment(orderId, paymentId, 'approved');
-                    console.log('[Payment Return] Order confirmed:', orderId);
                   }
                 } catch (orderError: any) {
                   // Si la orden ya fue procesada, continuar con la redirección
-                  console.log('[Payment Return] Order already processed:', orderId);
                 }
               } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
                 // Cancelar orden si el pago fue rechazado
@@ -306,16 +298,13 @@ export const orderController = {
                   const order = await OrderService.getOrderById(orderId);
                   if (order.status === 'pending-payment') {
                     await OrderService.cancelOrder(orderId, 'manually-cancelled');
-                    console.log('[Payment Return] Order cancelled:', orderId);
                   }
                 } catch (orderError: any) {
                   // Continuar con la redirección aunque haya error
-                  console.log('[Payment Return] Error cancelling order:', orderError.message);
                 }
               }
             }
           } catch (paymentError: any) {
-            console.error('[Payment Return] Error getting payment info:', paymentError.message);
             // Si falla obtener el pago pero tenemos preferenceId, intentar con eso
             if (preferenceId) {
               // Continuar al bloque de preferenceId
@@ -360,7 +349,6 @@ export const orderController = {
                       await OrderService.cancelOrder(orderId, 'manually-cancelled');
                       paymentStatus = 'rejected';
                     } catch (cancelError: any) {
-                      console.error('[Payment Return] Error cancelling order:', cancelError.message);
                     }
                   }
                 }
@@ -377,22 +365,17 @@ export const orderController = {
                     await OrderService.cancelOrder(orderId, 'manually-cancelled');
                     paymentStatus = 'rejected';
                   } catch (cancelError: any) {
-                    console.error('[Payment Return] Error cancelling order:', cancelError.message);
                   }
                 }
               }
             }
-            
-            console.log('[Payment Return] Order found by preferenceId:', { orderId, paymentStatus });
           } catch (prefError: any) {
-            console.error('[Payment Return] Error finding order by preferenceId:', prefError.message);
             throw new ValidationError('Order not found for preference');
           }
         }
 
         // Redirigir al frontend según el estado
         if (!orderId) {
-          console.error('[Payment Return] Order ID not found');
           throw new ValidationError('Order not found');
         }
 
@@ -418,12 +401,10 @@ export const orderController = {
         // El frontend manejará el callback y luego mostrará la página de éxito/error correspondiente
         // URL absoluta para asegurar que MercadoPago redirija correctamente
         const redirectUrl = `${baseFrontendUrl}/checkout/mercadopago-callback?${queryParams.toString()}`;
-        
-        console.log('[Payment Return] Redirecting to:', redirectUrl);
+
         return res.redirect(redirectUrl);
       } catch (paymentError: any) {
         // Si hay error al obtener el pago, redirigir con error
-        console.error('[Payment Return] Error processing payment:', paymentError.message);
         throw new ValidationError('Error processing payment');
       }
   },

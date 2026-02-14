@@ -8,7 +8,7 @@ import { ValidationError } from '../errors/ValidationError';
 import logger from '../config/logger';
 
 //configuracion de la reserva
-const RESERVATION_DAYS = 3;
+const RESERVATION_HOURS = 48;
 
 const normalizeOption = (value: string): string => value.trim().toUpperCase();
 
@@ -90,8 +90,7 @@ export const OrderService = {
     const orderNumber = `${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
 
     //calculo la fecha de expiracion de la reserva
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + RESERVATION_DAYS);
+    const expiresAt = new Date(Date.now() + RESERVATION_HOURS * 60 * 60 * 1000);
 
     //reservo el stock con batch
     const batch = db.batch();

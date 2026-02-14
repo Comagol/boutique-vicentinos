@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import router from './routes';
+import { startOrderExpirationJob } from './jobs/orderExpirationJob';
 
 dotenv.config();
 
@@ -89,3 +90,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   // Servidor iniciado
 });
+
+// Job en segundo plano para cancelar órdenes impagas vencidas y reponer stock
+startOrderExpirationJob();

@@ -108,8 +108,11 @@ export const OrderModel = {
         query = query.where('customer.name', '==', filters.customerName);
       }
 
-      const snapshot = await query.orderBy('createdAt', 'desc').get();
-      return snapshot.docs.map((doc) => firestoreToOrder(doc.data(), doc.id));
+      // Evitamos dependencia de índices compuestos (status + createdAt)
+      // ordenando en memoria luego de traer resultados filtrados.
+      const snapshot = await query.get();
+      const orders = snapshot.docs.map((doc) => firestoreToOrder(doc.data(), doc.id));
+      return orders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
       throw new Error(`Error getting orders: ${error}`);
     }
